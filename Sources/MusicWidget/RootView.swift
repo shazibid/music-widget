@@ -10,12 +10,17 @@ struct RootView: View {
             case .pill: PillView(viewModel: viewModel)
             case .cd: RotatingCDView(viewModel: viewModel)
             case .ipod: IPodView(viewModel: viewModel)
+            case .vinyl: VinylView(viewModel: viewModel)
             }
         }
+        .transition(.scale(scale: 0.9).combined(with: .opacity))
+        .contentShape(Rectangle())
         .contextMenu {
             ForEach(WidgetSkin.allCases) { option in
                 Button {
-                    skinStore.skin = option
+                    withAnimation(.easeInOut(duration: WidgetSkin.transitionDuration)) {
+                        skinStore.skin = option
+                    }
                 } label: {
                     if option == skinStore.skin {
                         Label(option.displayName, systemImage: "checkmark")

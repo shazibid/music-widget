@@ -3,23 +3,53 @@ import SwiftUI
 struct IPodView: View {
     @ObservedObject var viewModel: PlayerViewModel
 
+    private let bodyWidth: CGFloat = 210
+    private let bodyHeight: CGFloat = 352
+    private let bodyCornerRadius: CGFloat = 32
+    private let contentWidth: CGFloat = 178
+
     var body: some View {
-        VStack(spacing: 18) {
+        VStack(spacing: 14) {
             screen
             clickWheel
         }
-        .padding(16)
-        .frame(width: 220, height: 334)
-        .background(
-            RoundedRectangle(cornerRadius: 26, style: .continuous)
-                .fill(LinearGradient(colors: [.white, Color(white: 0.85)], startPoint: .top, endPoint: .bottom))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 26, style: .continuous)
-                .strokeBorder(.black.opacity(0.15), lineWidth: 1)
-        )
-        .shadow(color: .black.opacity(0.35), radius: 14, y: 8)
+        .padding(.horizontal, 16)
+        .padding(.top, 16)
+        .padding(.bottom, 14)
+        .frame(width: bodyWidth, height: bodyHeight)
+        .background(metalBody)
+        .shadow(color: .black.opacity(0.4), radius: 16, y: 10)
+        .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
     }
+
+    // MARK: - Body
+
+    /// Real iPod Classic bodies are mostly flat brushed steel with very soft
+    /// shading, not a strong stripe texture — a subtle diagonal gradient
+    /// plus a thin bevel reads closer to the real thing than heavy stripes.
+    private var metalBody: some View {
+        RoundedRectangle(cornerRadius: bodyCornerRadius, style: .continuous)
+            .fill(
+                LinearGradient(
+                    colors: [Color(white: 0.99), Color(white: 0.87), Color(white: 0.95)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: bodyCornerRadius, style: .continuous)
+                    .strokeBorder(
+                        LinearGradient(colors: [.white, Color(white: 0.75)], startPoint: .top, endPoint: .bottom),
+                        lineWidth: 1
+                    )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: bodyCornerRadius, style: .continuous)
+                    .stroke(.black.opacity(0.15), lineWidth: 0.75)
+            )
+    }
+
+    // MARK: - Screen
 
     private var title: String {
         if !viewModel.isSpotifyRunning { return "Nothing Playing" }
@@ -31,95 +61,116 @@ struct IPodView: View {
         return viewModel.track?.artist ?? " "
     }
 
+    private var screenSize: CGSize { CGSize(width: contentWidth, height: 132) }
+    private let screenCornerRadius: CGFloat = 14
+
     private var screen: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(viewModel.state == .playing ? "Now Playing" : "Paused")
-                    .font(.system(size: 9, weight: .semibold))
-                Spacer()
-                Image(systemName: "battery.100")
-                    .font(.system(size: 9))
-            }
-            .foregroundStyle(.black.opacity(0.65))
+        ZStack {
+            Rectangle().fill(.black)
 
-            Spacer(minLength: 2)
-
-            HStack(spacing: 8) {
-                artworkThumbnail
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.system(size: 12, weight: .semibold))
-                        .lineLimit(1)
-                    Text(subtitle)
-                        .font(.system(size: 10))
-                        .foregroundStyle(.black.opacity(0.6))
-                        .lineLimit(1)
-                }
-            }
-
-            Spacer(minLength: 2)
-        }
-        .padding(10)
-        .frame(width: 188, height: 110)
-        .background(RoundedRectangle(cornerRadius: 6).fill(Color(red: 0.78, green: 0.86, blue: 0.74)))
-        .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(.black.opacity(0.25), lineWidth: 1))
-    }
-
-    private var artworkThumbnail: some View {
-        Group {
             if let image = viewModel.artworkImage {
                 Image(nsImage: image)
                     .resizable()
-                    .scaledToFill()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: screenSize.width, height: screenSize.height)
             } else {
-                Rectangle().fill(.black.opacity(0.15))
+                VStack(spacing: 6) {
+                    Image(systemName: "music.note")
+                        .font(.system(size: 22))
+                    Text(subtitle)
+                        .font(.system(size: 10, weight: .medium))
+                }
+                .foregroundStyle(.white.opacity(0.55))
             }
+
+            if viewModel.track != nil {
+                VStack {
+                    Spacer()
+                    HStack {
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(title)
+                                .font(.system(size: 11, weight: .semibold))
+                                .lineLimit(1)
+                            Text(subtitle)
+                                .font(.system(size: 9))
+                                .foregroundStyle(.white.opacity(0.8))
+                                .lineLimit(1)
+                        }
+                        Spacer(minLength: 4)
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
+                    .background(LinearGradient(colors: [.clear, .black.opacity(0.8)], startPoint: .top, endPoint: .bottom))
+                }
+                .foregroundStyle(.white)
+            }
+
+            glassReflection
         }
-        .frame(width: 32, height: 32)
-        .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
+        .frame(width: screenSize.width, height: screenSize.height)
+        .clipShape(RoundedRectangle(cornerRadius: screenCornerRadius, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: screenCornerRadius, style: .continuous)
+                .strokeBorder(.black.opacity(0.7), lineWidth: 1)
+        )
     }
+
+    private var glassReflection: some View {
+        Ellipse()
+            .fill(.white.opacity(0.16))
+            .frame(width: 220, height: 60)
+            .rotationEffect(.degrees(-18))
+            .offset(x: 35, y: -30)
+            .blur(radius: 6)
+    }
+
+    // MARK: - Click wheel
+
+    private let wheelDiameter: CGFloat = 178
+    private let centerButtonDiameter: CGFloat = 66
 
     private var clickWheel: some View {
         ZStack {
             Circle()
-                .fill(Color(white: 0.87))
-                .frame(width: 176, height: 176)
+                .fill(
+                    RadialGradient(colors: [Color(white: 1.0), Color(white: 0.92)], center: .center, startRadius: 20, endRadius: wheelDiameter / 2)
+                )
+                .overlay(Circle().stroke(.black.opacity(0.12), lineWidth: 1))
 
             Text("MENU")
                 .font(.system(size: 11, weight: .bold))
-                .foregroundStyle(.black.opacity(0.55))
-                .offset(y: -64)
+                .offset(y: -wheelDiameter / 2 + 26)
 
             Image(systemName: "backward.end.fill")
                 .font(.system(size: 13))
-                .foregroundStyle(.black.opacity(0.55))
-                .offset(x: -64)
+                .offset(x: -(wheelDiameter / 2 - 26))
                 .contentShape(Circle())
                 .onTapGesture { viewModel.skipPrevious() }
 
             Image(systemName: "forward.end.fill")
                 .font(.system(size: 13))
-                .foregroundStyle(.black.opacity(0.55))
-                .offset(x: 64)
+                .offset(x: wheelDiameter / 2 - 26)
                 .contentShape(Circle())
                 .onTapGesture { viewModel.skipNext() }
 
             Image(systemName: viewModel.state == .playing ? "pause.fill" : "play.fill")
                 .font(.system(size: 13))
-                .foregroundStyle(.black.opacity(0.55))
-                .offset(y: 64)
+                .offset(y: wheelDiameter / 2 - 26)
                 .contentShape(Circle())
                 .onTapGesture { viewModel.togglePlayPause() }
 
             Circle()
-                .fill(Color(white: 0.97))
-                .frame(width: 68, height: 68)
-                .overlay(Circle().strokeBorder(.black.opacity(0.08)))
-                .shadow(color: .black.opacity(0.15), radius: 1)
+                .fill(
+                    RadialGradient(colors: [Color(white: 0.97), Color(white: 0.86)], center: UnitPoint(x: 0.4, y: 0.35), startRadius: 4, endRadius: centerButtonDiameter / 2 + 10)
+                )
+                .overlay(Circle().stroke(.black.opacity(0.15), lineWidth: 1))
+                .frame(width: centerButtonDiameter, height: centerButtonDiameter)
+                .shadow(color: .black.opacity(0.2), radius: 1, y: 0.5)
                 .contentShape(Circle())
                 .onTapGesture { viewModel.togglePlayPause() }
         }
-        .frame(width: 176, height: 176)
+        .foregroundStyle(.black.opacity(0.55))
+        .frame(width: wheelDiameter, height: wheelDiameter)
         .opacity(viewModel.isSpotifyRunning ? 1 : 0.5)
         .allowsHitTesting(viewModel.isSpotifyRunning)
     }

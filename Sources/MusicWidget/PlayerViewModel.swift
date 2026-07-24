@@ -22,26 +22,53 @@ final class PlayerViewModel: ObservableObject {
     }
 
     func refresh() {
-        isSpotifyRunning = SpotifyController.isRunning()
-        state = SpotifyController.playerState()
-        track = SpotifyController.currentTrack()
-        position = SpotifyController.playerPosition()
-        loadArtworkIfNeeded()
+        Task.detached(priority: .userInitiated) { [weak self] in
+            let running = SpotifyController.isRunning()
+            let state = running ? SpotifyController.playerState() : .stopped
+            let track = running ? SpotifyController.currentTrack() : nil
+            let position = running ? SpotifyController.playerPosition() : 0
+            await self?.apply(running: running, state: state, track: track, position: position)
+        }
     }
 
+    /// Flips instantly so the button and the CD's spin animation update in
+    /// the same frame, instead of waiting on Spotify's AppleScript round-trip.
     func togglePlayPause() {
-        SpotifyController.playPause()
-        refresh()
+        state = (state == .playing) ? .paused : .playing
+        Task.detached(priority: .userInitiated) { [weak self] in
+            SpotifyController.playPause()
+            await self?.refreshFromBackground()
+        }
     }
 
     func skipNext() {
-        SpotifyController.next()
-        refresh()
+        Task.detached(priority: .userInitiated) { [weak self] in
+            SpotifyController.next()
+            await self?.refreshFromBackground()
+        }
     }
 
     func skipPrevious() {
-        SpotifyController.previous()
-        refresh()
+        Task.detached(priority: .userInitiated) { [weak self] in
+            SpotifyController.previous()
+            await self?.refreshFromBackground()
+        }
+    }
+
+    private nonisolated func refreshFromBackground() async {
+        let running = SpotifyController.isRunning()
+        let state = running ? SpotifyController.playerState() : .stopped
+        let track = running ? SpotifyController.currentTrack() : nil
+        let position = running ? SpotifyController.playerPosition() : 0
+        await apply(running: running, state: state, track: track, position: position)
+    }
+
+    private func apply(running: Bool, state: SpotifyPlayerState, track: SpotifyTrack?, position: Double) {
+        isSpotifyRunning = running
+        self.state = state
+        self.track = track
+        self.position = position
+        loadArtworkIfNeeded()
     }
 
     private func loadArtworkIfNeeded() {

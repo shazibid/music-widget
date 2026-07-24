@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 
 struct SpotifyTrack: Equatable {
@@ -16,7 +17,7 @@ enum SpotifyPlayerState: String {
 
 enum SpotifyController {
     static func isRunning() -> Bool {
-        runAppleScript(#"tell application "System Events" to (name of processes) contains "Spotify""#) == "true"
+        NSWorkspace.shared.runningApplications.contains { $0.bundleIdentifier == "com.spotify.client" }
     }
 
     static func currentTrack() -> SpotifyTrack? {

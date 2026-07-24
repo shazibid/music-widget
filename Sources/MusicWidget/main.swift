@@ -1,6 +1,21 @@
 import AppKit
 import Combine
+import QuartzCore
 import SwiftUI
+
+/// Plain `NSWindow` refuses key/main status when borderless, which breaks
+/// right-click context menus and click-to-focus. Overriding both fixes it.
+final class FloatingWidgetWindow: NSWindow {
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { true }
+}
+
+/// Without this, the widget's first click while the app is inactive (which is
+/// nearly always, since Spotify/whatever else is frontmost) is swallowed just
+/// to bring the window forward instead of being delivered as a real click.
+final class ClickableHostingView<Content: View>: NSHostingView<Content> {
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+}
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
@@ -10,10 +25,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var cancellables = Set<AnyCancellable>()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        let hosting = NSHostingView(rootView: RootView(viewModel: viewModel, skinStore: skinStore))
+        let hosting = ClickableHostingView(rootView: RootView(viewModel: viewModel, skinStore: skinStore))
 
         let initialSize = skinStore.skin.windowSize
-        let window = NSWindow(
+        let window = FloatingWidgetWindow(
             contentRect: NSRect(x: 0, y: 0, width: initialSize.width, height: initialSize.height),
             styleMask: [.borderless, .fullSizeContentView],
             backing: .buffered,
@@ -35,6 +50,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
         self.window = window
 
         skinStore.$skin
@@ -57,7 +73,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             width: newSize.width,
             height: newSize.height
         )
-        window.setFrame(newFrame, display: true, animate: true)
+        // Matches the SwiftUI content's transition duration/easing (see
+        // RootView) so the frame and the widget inside it move as one.
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = WidgetSkin.transitionDuration
+            context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+            window.animator().setFrame(newFrame, display: true)
+        }
     }
 }
 
