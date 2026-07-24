@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:music widget}",
+            "name": "Debug MusicWidget",
+            "target": "MusicWidget",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug MusicWidget"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:music widget}",
+            "name": "Release MusicWidget",
+            "target": "MusicWidget",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release MusicWidget"
+        }
+    ]
+}
