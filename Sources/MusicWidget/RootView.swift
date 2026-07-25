@@ -3,14 +3,15 @@ import SwiftUI
 struct RootView: View {
     @ObservedObject var viewModel: PlayerViewModel
     @ObservedObject var skinStore: SkinStore
+    var onMinimize: () -> Void
 
     var body: some View {
         Group {
             switch skinStore.skin {
             case .pill: PillView(viewModel: viewModel)
             case .cd: RotatingCDView(viewModel: viewModel)
-            case .ipod: IPodView(viewModel: viewModel)
             case .vinyl: VinylView(viewModel: viewModel)
+            case .ipod: IPodView(viewModel: viewModel)
             }
         }
         .transition(.scale(scale: 0.9).combined(with: .opacity))
@@ -36,6 +37,7 @@ struct RootView: View {
                 Button("Connect Spotify Account…") { viewModel.connectSpotify() }
             }
             Divider()
+            Button("Minimize") { onMinimize() }
             Button("Quit") { NSApp.terminate(nil) }
         }
     }

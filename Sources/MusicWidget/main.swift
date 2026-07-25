@@ -25,12 +25,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var cancellables = Set<AnyCancellable>()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        let hosting = ClickableHostingView(rootView: RootView(viewModel: viewModel, skinStore: skinStore))
+        let hosting = ClickableHostingView(
+            rootView: RootView(viewModel: viewModel, skinStore: skinStore, onMinimize: { [weak self] in self?.minimizeToDock() })
+        )
 
         let initialSize = skinStore.skin.windowSize
         let window = FloatingWidgetWindow(
             contentRect: NSRect(x: 0, y: 0, width: initialSize.width, height: initialSize.height),
-            styleMask: [.borderless, .fullSizeContentView],
+            // `.miniaturizable` has no visual effect without `.titled` (no
+            // title bar appears) but is required for `miniaturize(_:)` to
+            // work — without it the window just refuses to minimize.
+            styleMask: [.borderless, .fullSizeContentView, .miniaturizable],
             backing: .buffered,
             defer: false
         )
@@ -61,6 +66,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             .store(in: &cancellables)
 
         viewModel.startPolling()
+    }
+
+    /// Sends the widget into the Dock as a live thumbnail, same as clicking a
+    /// normal window's minimize button — works even though the app itself
+    /// has no permanent Dock icon (`.accessory` policy). Clicking that Dock
+    /// tile restores the window; no extra handling needed.
+    private func minimizeToDock() {
+        window?.miniaturize(nil)
     }
 
     private func resizeWindow(for skin: WidgetSkin) {
