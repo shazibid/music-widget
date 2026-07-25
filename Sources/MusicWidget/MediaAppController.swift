@@ -12,7 +12,12 @@ struct Track: Equatable {
     let artist: String
     let album: String
     let artwork: ArtworkSource?
-    let duration: Double
+}
+
+struct QueueTrack: Equatable, Identifiable {
+    let id = UUID()
+    let name: String
+    let artist: String
 }
 
 enum PlayerState: String {
@@ -25,11 +30,16 @@ enum PlayerState: String {
 /// `PlayerViewModel` can poll all of them and act on whichever is active
 /// without app-specific branching.
 protocol MediaAppController {
+    /// Whether this app's scripting interface can enumerate upcoming tracks
+    /// at all — Spotify's AppleScript dictionary has no queue/playlist
+    /// concept, only the single current track, so it reports `false`.
+    static var supportsQueue: Bool { get }
+
     static func isRunning() -> Bool
     static func currentTrack() -> Track?
     static func playerState() -> PlayerState
-    static func playerPosition() -> Double
     static func playPause()
     static func next()
     static func previous()
+    static func queue() -> [QueueTrack]
 }

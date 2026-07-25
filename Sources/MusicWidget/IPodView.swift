@@ -7,6 +7,8 @@ import SwiftUI
 struct IPodView: View {
     @ObservedObject var viewModel: PlayerViewModel
 
+    @State private var showingQueue = false
+
     private let bodyWidth: CGFloat = 210
     private let bodyHeight: CGFloat = 210 * (486.0 / 295.0)
     private let scale: CGFloat = 210 / 295.0
@@ -19,22 +21,47 @@ struct IPodView: View {
         return NSImage(contentsOf: url)
     }()
 
+    /// The artwork's canvas is taller than the device itself: it reserves
+    /// space at the bottom for a baked-in drop shadow. Measured from the
+    /// image's pixels (using the unobstructed top half as reference, since
+    /// the shadow contaminates the bottom edge), the device itself sits at
+    /// x:[12, 283], y:[6, 462] out of the 295×486 canvas. Masking to that
+    /// rect discards the baked shadow so the window's own native shadow
+    /// (see `main.swift`) hugs the device's true silhouette instead of the
+    /// full padded canvas.
+    private var deviceBounds: CGRect {
+        CGRect(x: 12 * scale, y: 6 * scale, width: 271 * scale, height: 456 * scale)
+    }
+    private var deviceCornerRadius: CGFloat { 20 * scale }
+
     var body: some View {
         ZStack {
             if let bodyImage = Self.bodyImage {
                 Image(nsImage: bodyImage)
                     .resizable()
                     .frame(width: bodyWidth, height: bodyHeight)
+                    .mask(
+                        RoundedRectangle(cornerRadius: deviceCornerRadius, style: .continuous)
+                            .frame(width: deviceBounds.width, height: deviceBounds.height)
+                            .position(x: deviceBounds.midX, y: deviceBounds.midY)
+                    )
             }
 
             screen
                 .frame(width: screenSize.width, height: screenSize.height)
                 .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 3, style: .continuous)
+                        .stroke(.black, lineWidth: 2)
+                )
                 .position(x: screenOrigin.x + screenSize.width / 2, y: screenOrigin.y + screenSize.height / 2)
 
             wheelHitTargets
         }
         .frame(width: bodyWidth, height: bodyHeight)
+        .onChange(of: viewModel.isSourceRunning) { _, isRunning in
+            if !isRunning { showingQueue = false }
+        }
     }
 
     // MARK: - Screen
@@ -56,6 +83,16 @@ struct IPodView: View {
         ZStack {
             Rectangle().fill(.black)
 
+            if showingQueue && viewModel.isSourceRunning {
+                queueScreen
+            } else {
+                nowPlayingScreen
+            }
+        }
+    }
+
+    private var nowPlayingScreen: some View {
+        ZStack {
             if let image = viewModel.artworkImage {
                 Image(nsImage: image)
                     .resizable()
@@ -95,6 +132,66 @@ struct IPodView: View {
         }
     }
 
+    // MARK: - Queue
+
+    /// Styled after the click-wheel iPod's own list screens: a Monaco
+    /// (classic bitmap-Mac heritage) header over a plain list, since there's
+    /// no bundled facsimile of the original device's actual bitmap font.
+    private var queueScreen: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("UP NEXT")
+                .font(.custom("Monaco", size: 11))
+                .fontWeight(.bold)
+                .tracking(0.5)
+                .foregroundStyle(.white)
+                .padding(.horizontal, 8)
+                .padding(.top, 6)
+                .padding(.bottom, 5)
+
+            Rectangle()
+                .fill(.white.opacity(0.25))
+                .frame(height: 1)
+
+            if !viewModel.queueSupported {
+                queueMessage("Queue not available\nfor Spotify")
+            } else if viewModel.queue.isEmpty {
+                queueMessage(viewModel.isLoadingQueue ? "Loading…" : "No Upcoming Tracks")
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 7) {
+                        ForEach(viewModel.queue) { track in
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(track.name)
+                                    .font(.custom("Monaco", size: 10))
+                                    .foregroundStyle(.white)
+                                    .lineLimit(1)
+                                Text(track.artist)
+                                    .font(.custom("Monaco", size: 9))
+                                    .foregroundStyle(.white.opacity(0.55))
+                                    .lineLimit(1)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
+                }
+            }
+        }
+    }
+
+    private func queueMessage(_ text: String) -> some View {
+        VStack {
+            Spacer()
+            Text(text)
+                .font(.custom("Monaco", size: 10))
+                .foregroundStyle(.white.opacity(0.6))
+                .multilineTextAlignment(.center)
+            Spacer()
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 8)
+    }
+
     // MARK: - Click wheel hit targets
 
     private var wheelCenter: CGPoint { CGPoint(x: 147.5 * scale, y: 328.5 * scale) }
@@ -106,7 +203,8 @@ struct IPodView: View {
     private var wheelHitTargets: some View {
         ZStack {
             hitTarget(diameter: 42, offset: CGPoint(x: 0, y: -iconRadius)) {
-                // Menu currently has no destination — reserved for future use.
+                showingQueue.toggle()
+                if showingQueue { viewModel.fetchQueue() }
             }
             hitTarget(diameter: 42, offset: CGPoint(x: -iconRadius, y: 0)) {
                 viewModel.skipPrevious()
@@ -117,7 +215,7 @@ struct IPodView: View {
             hitTarget(diameter: 42, offset: CGPoint(x: 0, y: iconRadius)) {
                 viewModel.togglePlayPause()
             }
-            hitTarget(diameter: 50, offset: .zero) {
+            hitTarget(diameter: 50, offset: .zero, clipDiameter: holeDiameter) {
                 viewModel.togglePlayPause()
             }
         }
@@ -127,29 +225,57 @@ struct IPodView: View {
         .allowsHitTesting(viewModel.isSourceRunning)
     }
 
-    private func hitTarget(diameter: CGFloat, offset: CGPoint, action: @escaping () -> Void) -> some View {
+    /// The recessed hole at the wheel's center, measured from the artwork.
+    private var holeDiameter: CGFloat { 83 * scale }
+
+    private func hitTarget(diameter: CGFloat, offset: CGPoint, clipDiameter: CGFloat? = nil, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Circle()
                 .fill(.clear)
                 .contentShape(Circle())
         }
-        .buttonStyle(WheelButtonStyle())
+        .buttonStyle(WheelButtonStyle(diameter: diameter, clipDiameter: clipDiameter))
         .frame(width: diameter, height: diameter)
         .offset(x: offset.x, y: offset.y)
     }
 }
 
-/// Darkens the tapped spot with an inset-looking shadow so a click reads as
-/// the button being pushed into the wheel, since the icons themselves are
-/// baked into the body artwork and can't shift or highlight on their own.
+/// Darkens the tapped spot with a soft radial fade (no hard edge) so a click
+/// reads as gentle shading pushed into the wheel, rather than a sticker
+/// dropped on top — `.multiply` lets it shade the artwork underneath instead
+/// of sitting as a flat, opaque disc. `clipDiameter`, when set, caps the glow
+/// to a specific circle (e.g. the wheel's center hole) instead of letting it
+/// grow past `diameter` on its own.
 private struct WheelButtonStyle: ButtonStyle {
+    let diameter: CGFloat
+    var clipDiameter: CGFloat? = nil
+
+    private var visualDiameter: CGFloat { diameter * 1.7 }
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .background(
-                Circle()
-                    .fill(.black.opacity(configuration.isPressed ? 0.06 : 0))
-                    .shadow(color: .black.opacity(configuration.isPressed ? 0.12 : 0), radius: 2, y: 0.5)
+            .background(glow(pressed: configuration.isPressed))
+            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
+    }
+
+    @ViewBuilder
+    private func glow(pressed: Bool) -> some View {
+        let fade = Circle()
+            .fill(
+                RadialGradient(
+                    colors: [.black.opacity(pressed ? 0.16 : 0), .clear],
+                    center: .center,
+                    startRadius: 0,
+                    endRadius: visualDiameter / 2
+                )
             )
-            .animation(.easeOut(duration: 0.1), value: configuration.isPressed)
+            .blendMode(.multiply)
+            .frame(width: visualDiameter, height: visualDiameter)
+
+        if let clipDiameter {
+            fade.mask(Circle().frame(width: clipDiameter, height: clipDiameter))
+        } else {
+            fade
+        }
     }
 }
