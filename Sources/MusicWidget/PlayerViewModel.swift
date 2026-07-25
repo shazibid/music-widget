@@ -10,9 +10,14 @@ final class PlayerViewModel: ObservableObject {
     @Published private(set) var isSourceRunning = false
     @Published private(set) var queue: [QueueTrack] = []
     @Published private(set) var isLoadingQueue = false
+    /// True when the queue couldn't be shown because Spotify's account-wide
+    /// active device isn't this Mac — distinct from an empty `queue`, which
+    /// means "verified, and there's genuinely nothing upcoming."
+    @Published private(set) var isQueueOnOtherDevice = false
 
-    /// Whether the active app's scripting interface can enumerate upcoming
-    /// tracks at all (false for Spotify — see `MediaAppController.supportsQueue`).
+    /// Whether the active app can enumerate upcoming tracks right now (see
+    /// `MediaAppController.supportsQueue`) — false for Spotify until the user
+    /// connects their account.
     var queueSupported: Bool { activeController?.supportsQueue ?? false }
 
     private nonisolated static let controllers: [MediaAppController.Type] = [SpotifyController.self, AppleMusicController.self]
@@ -20,6 +25,8 @@ final class PlayerViewModel: ObservableObject {
     private var timer: Timer?
     private var activeController: MediaAppController.Type?
     private var lastArtworkKey: String?
+    private var isQueueVisible = false
+    private var lastQueueTrackKey: String?
 
     func startPolling() {
         refresh()
@@ -66,20 +73,66 @@ final class PlayerViewModel: ObservableObject {
         }
     }
 
-    /// Fetched on demand (when the Menu screen opens) rather than on every
-    /// poll tick, since it's an extra AppleScript round-trip nothing else needs.
+    /// Fetched on demand (when the queue screen opens) and again whenever the
+    /// current track changes while it's still open — a plain one-shot fetch
+    /// otherwise goes stale the moment playback advances or the user skips.
     func fetchQueue() {
         guard let controller = activeController, controller.supportsQueue else {
+            print("fetchQueue skipped: activeController=\(String(describing: activeController)) supportsQueue=\(String(describing: activeController?.supportsQueue))")
             queue = []
+            isQueueOnOtherDevice = false
             return
         }
         isLoadingQueue = true
+        let localTrack = track
         Task.detached(priority: .userInitiated) { [weak self] in
-            let result = controller.queue()
+            let result = await controller.queue(matching: localTrack)
             await MainActor.run {
-                self?.queue = result
+                switch result {
+                case .tracks(let tracks):
+                    self?.queue = tracks
+                    self?.isQueueOnOtherDevice = false
+                case .otherDeviceActive:
+                    self?.queue = []
+                    self?.isQueueOnOtherDevice = true
+                }
                 self?.isLoadingQueue = false
             }
+        }
+    }
+
+    /// Called by the queue screen when it's shown/hidden so `apply` knows
+    /// whether it's worth re-fetching on track changes.
+    func setQueueVisible(_ visible: Bool) {
+        isQueueVisible = visible
+        if visible {
+            lastQueueTrackKey = track.map { "\($0.name)|\($0.artist)" }
+            fetchQueue()
+        }
+    }
+
+    /// Whether the user has connected a Spotify account — gates the
+    /// "Connect"/"Disconnect" menu item's label.
+    var isSpotifyConnected: Bool { SpotifyKeychainStore.hasRefreshToken() }
+
+    /// Opens the system browser for the PKCE login flow. Refreshes right
+    /// after so `queueSupported`/`isSpotifyConnected` reflect the new state
+    /// without waiting on the next poll tick.
+    func connectSpotify() {
+        Task {
+            do {
+                try await SpotifyAuthManager.shared.login()
+                refresh()
+            } catch {
+                print("Spotify login failed: \(error)")
+            }
+        }
+    }
+
+    func disconnectSpotify() {
+        Task {
+            await SpotifyAuthManager.shared.logout()
+            refresh()
         }
     }
 
@@ -98,11 +151,21 @@ final class PlayerViewModel: ObservableObject {
         isSourceRunning = snapshot.controller != nil
         if activeController != nil, snapshot.controller == nil {
             queue = []
+            isQueueOnOtherDevice = false
         }
         activeController = snapshot.controller
         state = snapshot.state
         track = snapshot.track
         loadArtworkIfNeeded()
+        refreshQueueIfTrackChanged()
+    }
+
+    private func refreshQueueIfTrackChanged() {
+        guard isQueueVisible else { return }
+        let key = track.map { "\($0.name)|\($0.artist)" }
+        guard key != lastQueueTrackKey else { return }
+        lastQueueTrackKey = key
+        fetchQueue()
     }
 
     private func loadArtworkIfNeeded() {

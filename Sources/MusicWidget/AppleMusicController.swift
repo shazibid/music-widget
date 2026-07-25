@@ -50,8 +50,8 @@ enum AppleMusicController: MediaAppController {
     /// remaining track in a long playlist. Radio/algorithmic playback has no
     /// indexable "current playlist", so that case (and any other scripting
     /// error) just yields an empty queue via the try block.
-    static func queue() -> [QueueTrack] {
-        guard isRunning() else { return [] }
+    static func queue(matching localTrack: Track?) -> QueueFetchResult {
+        guard isRunning() else { return .tracks([]) }
         let script = """
         tell application "Music"
             if player state is stopped then return ""
@@ -75,12 +75,12 @@ enum AppleMusicController: MediaAppController {
             end try
         end tell
         """
-        guard let result = runAppleScript(script), !result.isEmpty else { return [] }
-        return result.components(separatedBy: "\u{241F}").compactMap { item in
+        guard let result = runAppleScript(script), !result.isEmpty else { return .tracks([]) }
+        return .tracks(result.components(separatedBy: "\u{241F}").compactMap { item in
             let parts = item.components(separatedBy: "\u{241E}")
             guard parts.count == 2 else { return nil }
             return QueueTrack(name: parts[0], artist: parts[1])
-        }
+        })
     }
 
     /// Unlike Spotify, Music has no artwork URL — the artwork only exists as

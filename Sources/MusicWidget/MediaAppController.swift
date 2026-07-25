@@ -20,6 +20,16 @@ struct QueueTrack: Equatable, Identifiable {
     let artist: String
 }
 
+/// `.otherDeviceActive` is distinct from `.tracks([])` — the former means
+/// "there may well be a queue, but it belongs to a different device's
+/// session and can't be trusted," the latter means "genuinely nothing
+/// upcoming." Only Spotify (a cross-device Web API) can hit the first case;
+/// Apple Music's local AppleScript queue always resolves to `.tracks`.
+enum QueueFetchResult {
+    case tracks([QueueTrack])
+    case otherDeviceActive
+}
+
 enum PlayerState: String {
     case playing
     case paused
@@ -30,9 +40,10 @@ enum PlayerState: String {
 /// `PlayerViewModel` can poll all of them and act on whichever is active
 /// without app-specific branching.
 protocol MediaAppController {
-    /// Whether this app's scripting interface can enumerate upcoming tracks
-    /// at all — Spotify's AppleScript dictionary has no queue/playlist
-    /// concept, only the single current track, so it reports `false`.
+    /// Whether upcoming tracks can be enumerated right now. Apple Music
+    /// always can (via MusicKit); Spotify only once the user has connected
+    /// their account through the Web API, since its AppleScript dictionary
+    /// has no queue/playlist concept of its own.
     static var supportsQueue: Bool { get }
 
     static func isRunning() -> Bool
@@ -41,5 +52,11 @@ protocol MediaAppController {
     static func playPause()
     static func next()
     static func previous()
-    static func queue() -> [QueueTrack]
+    /// `localTrack` is the currently-playing track as this controller itself
+    /// reports it (from `currentTrack()`), passed in so an implementation
+    /// backed by a cross-device API (Spotify) can tell whether the data it
+    /// got back actually belongs to this machine's session.
+    /// Async because Spotify's implementation is a real network round-trip
+    /// to the Web API; Apple Music's stays a synchronous AppleScript call.
+    static func queue(matching localTrack: Track?) async -> QueueFetchResult
 }

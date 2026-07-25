@@ -83,6 +83,39 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 }
 
+/// `swift run MusicWidget --print-queue` — calls the same `SpotifyController.queue()`
+/// the widget uses, prints it as plain JSON, and exits. No window, no GUI event
+/// loop, so it's safe to script/pipe and won't leave a floating widget behind.
+if CommandLine.arguments.contains("--print-queue") {
+    struct QueueTrackJSON: Encodable { let name: String; let artist: String }
+
+    let semaphore = DispatchSemaphore(value: 0)
+    Task {
+        defer { semaphore.signal() }
+        guard SpotifyController.isRunning() else {
+            FileHandle.standardError.write(Data("Spotify isn't running.\n".utf8))
+            return
+        }
+        guard SpotifyController.supportsQueue else {
+            FileHandle.standardError.write(Data("Not connected — run the app normally and use \"Connect Spotify Account\" first.\n".utf8))
+            return
+        }
+        switch await SpotifyController.queue(matching: SpotifyController.currentTrack()) {
+        case .otherDeviceActive:
+            FileHandle.standardError.write(Data("Suppressed: Spotify's active device isn't this Mac.\n".utf8))
+            print("[]")
+        case .tracks(let queue):
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .withoutEscapingSlashes]
+            let json = (try? encoder.encode(queue.map { QueueTrackJSON(name: $0.name, artist: $0.artist) }))
+                .flatMap { String(data: $0, encoding: .utf8) } ?? "[]"
+            print(json)
+        }
+    }
+    semaphore.wait()
+    exit(0)
+}
+
 let app = NSApplication.shared
 let delegate = AppDelegate()
 app.delegate = delegate

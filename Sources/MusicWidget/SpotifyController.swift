@@ -3,8 +3,9 @@ import Foundation
 
 enum SpotifyController: MediaAppController {
     /// Spotify's scripting dictionary exposes only `current track` — no
-    /// queue or playlist enumeration — so there's nothing to fetch.
-    static let supportsQueue = false
+    /// queue or playlist enumeration — so upcoming tracks can only come from
+    /// the Web API, and only once the user has connected their account.
+    static var supportsQueue: Bool { SpotifyKeychainStore.hasRefreshToken() }
 
     static func isRunning() -> Bool {
         NSWorkspace.shared.runningApplications.contains { $0.bundleIdentifier == "com.spotify.client" }
@@ -43,7 +44,15 @@ enum SpotifyController: MediaAppController {
         runAppleScript(#"tell application "Spotify" to previous track"#)
     }
 
-    static func queue() -> [QueueTrack] { [] }
+    static func queue(matching localTrack: Track?) async -> QueueFetchResult {
+        guard isRunning() else { return .tracks([]) }
+        do {
+            return try await SpotifyWebAPI.fetchQueue(matching: localTrack)
+        } catch {
+            print("Spotify fetchQueue failed: \(error)")
+            return .tracks([])
+        }
+    }
 
     @discardableResult
     private static func runAppleScript(_ source: String) -> String? {

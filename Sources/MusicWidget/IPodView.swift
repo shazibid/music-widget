@@ -34,6 +34,19 @@ struct IPodView: View {
     }
     private var deviceCornerRadius: CGFloat { 20 * scale }
 
+    /// The screen bezel was measured on a reference canvas where the device
+    /// (i.e. `deviceBounds`, not the shadow-padded PNG) rendered at 375×628:
+    /// an inner rect of 308×231 and an outer rect of 318×243 with a corner
+    /// radius of 5. Only the padding between those two rects is used here —
+    /// applied to the already-tuned `screenSize` — so this doesn't disturb
+    /// the screen's own hand-fitted position. `deviceBounds.width / 375`
+    /// converts that reference canvas into this view's own point space.
+    private var screenBorderPadding: CGSize {
+        let referenceScale = deviceBounds.width / 375
+        return CGSize(width: 5 * referenceScale, height: 6 * referenceScale)
+    }
+    private var screenBorderRadius: CGFloat { 5 * deviceBounds.width / 375 }
+
     var body: some View {
         ZStack {
             if let bodyImage = Self.bodyImage {
@@ -47,20 +60,37 @@ struct IPodView: View {
                     )
             }
 
+            RoundedRectangle(cornerRadius: screenBorderRadius, style: .continuous)
+                .fill(.black)
+                .frame(
+                    width: screenSize.width + screenBorderPadding.width * 2,
+                    height: screenSize.height + screenBorderPadding.height * 2
+                )
+                .position(x: screenOrigin.x + screenSize.width / 2, y: screenOrigin.y + screenSize.height / 2)
+
             screen
                 .frame(width: screenSize.width, height: screenSize.height)
-                .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 3, style: .continuous)
-                        .stroke(.black, lineWidth: 2)
-                )
+                .clipShape(RoundedRectangle(cornerRadius: 0, style: .continuous))
                 .position(x: screenOrigin.x + screenSize.width / 2, y: screenOrigin.y + screenSize.height / 2)
 
             wheelHitTargets
         }
         .frame(width: bodyWidth, height: bodyHeight)
+        // The ZStack above is laid out on the full, shadow-padded canvas so
+        // every pixel-measured position (screenOrigin, wheelCenter, etc.)
+        // stays valid. Shifting by -deviceBounds.origin and re-framing to
+        // deviceBounds.size crops that padding away from the *window* too —
+        // otherwise the window stays canvas-sized while only the artwork
+        // gets clipped, leaving a dead-space margin between the visible
+        // device and the window/screen edge.
+        .offset(x: -deviceBounds.minX, y: -deviceBounds.minY)
+        .frame(width: deviceBounds.width, height: deviceBounds.height, alignment: .topLeading)
+        .clipped()
         .onChange(of: viewModel.isSourceRunning) { _, isRunning in
-            if !isRunning { showingQueue = false }
+            if !isRunning {
+                showingQueue = false
+                viewModel.setQueueVisible(false)
+            }
         }
     }
 
@@ -154,6 +184,8 @@ struct IPodView: View {
 
             if !viewModel.queueSupported {
                 queueMessage("Queue not available\nfor Spotify")
+            } else if viewModel.isQueueOnOtherDevice {
+                queueMessage("Playing on\nanother device")
             } else if viewModel.queue.isEmpty {
                 queueMessage(viewModel.isLoadingQueue ? "Loading…" : "No Upcoming Tracks")
             } else {
@@ -204,7 +236,7 @@ struct IPodView: View {
         ZStack {
             hitTarget(diameter: 42, offset: CGPoint(x: 0, y: -iconRadius)) {
                 showingQueue.toggle()
-                if showingQueue { viewModel.fetchQueue() }
+                viewModel.setQueueVisible(showingQueue)
             }
             hitTarget(diameter: 42, offset: CGPoint(x: -iconRadius, y: 0)) {
                 viewModel.skipPrevious()
@@ -225,8 +257,12 @@ struct IPodView: View {
         .allowsHitTesting(viewModel.isSourceRunning)
     }
 
-    /// The recessed hole at the wheel's center, measured from the artwork.
-    private var holeDiameter: CGFloat { 83 * scale }
+    /// The recessed hole at the wheel's center. Sized from the traced
+    /// reference (84×84 against a 375-wide device), via the same
+    /// `deviceBounds.width / 375` reference scale used for the screen bezel
+    /// above — the earlier pixel-guessed value (83 against the 295-wide
+    /// canvas) was noticeably too large relative to the actual device.
+    private var holeDiameter: CGFloat { 84 * deviceBounds.width / 375 }
 
     private func hitTarget(diameter: CGFloat, offset: CGPoint, clipDiameter: CGFloat? = nil, action: @escaping () -> Void) -> some View {
         Button(action: action) {

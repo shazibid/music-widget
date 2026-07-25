@@ -23,7 +23,11 @@ enum WidgetSkin: String, CaseIterable, Identifiable {
         case .pill: NSSize(width: 320, height: 68)
         case .cd: NSSize(width: 240, height: 300)
         case .vinyl: NSSize(width: 240, height: 300)
-        case .ipod: NSSize(width: 210, height: 346)
+        // Matches IPodView's `deviceBounds`: the artwork's canvas (295×486)
+        // pads out to a 210×346 rect, but the device itself only fills
+        // 271×456 of that — trimmed here so the window doesn't carry
+        // leftover margin now that IPodView crops that padding away too.
+        case .ipod: NSSize(width: 210 * 271.0 / 295.0, height: 210 * 456.0 / 295.0)
         }
     }
 

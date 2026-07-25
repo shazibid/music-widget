@@ -30,6 +30,12 @@ struct RootView: View {
                 }
             }
             Divider()
+            if viewModel.isSpotifyConnected {
+                Button("Disconnect Spotify Account") { viewModel.disconnectSpotify() }
+            } else {
+                Button("Connect Spotify Account…") { viewModel.connectSpotify() }
+            }
+            Divider()
             Button("Quit") { NSApp.terminate(nil) }
         }
     }
