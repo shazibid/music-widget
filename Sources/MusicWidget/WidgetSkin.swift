@@ -4,15 +4,15 @@ import Combine
 enum WidgetSkin: String, CaseIterable, Identifiable {
     case pill
     case cd
-    case ipod
     case vinyl
+    case ipod
 
     var id: String { rawValue }
 
     var displayName: String {
         switch self {
         case .pill: "Glass Pill"
-        case .cd: "Rotating CD"
+        case .cd: "CD Player"
         case .vinyl: "Vinyl Record"
         case .ipod: "iPod"
         }
