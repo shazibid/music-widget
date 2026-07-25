@@ -43,33 +43,112 @@ click-wheel iPod, or a spinning vinyl record.
 
 ## Getting started
 
-### 1. Build and run
+The steps below assume you've never used Terminal, Git, or Xcode before, so
+everything is spelled out in full. If any of this is already familiar, skip
+ahead — experienced folks can just `git clone`, `swift run`, done.
 
-From the command line, with the Swift toolchain on your `PATH`:
+### 1. Install Xcode
+
+Xcode is Apple's free app-building tool. Installing it gives you the Swift
+compiler and everything else needed to build this project — nothing else to
+install separately.
+
+1. Open the **App Store** app (click its icon in the Dock, or press
+   `Cmd + Space`, type `App Store`, press Return).
+2. Search for **Xcode** and click **Get** / the download button. It's a big
+   download (several gigabytes), so this may take a while.
+3. Once installed, open **Xcode** from your Applications folder at least
+   once. It will ask to install some "additional components" — click
+   **Install**, enter your Mac password if prompted, and wait for it to
+   finish. You can then quit Xcode; you won't need to open it again unless
+   you want to.
+
+### 2. Get the project's code onto your Mac
+
+This project's code lives on **GitHub** at
+https://github.com/shazibid/music-widget. "Cloning" just means downloading a
+copy of it. Pick whichever of these two ways feels easier:
+
+**Option A — Download as a ZIP file (simplest, no extra tools)**
+
+1. Go to https://github.com/shazibid/music-widget in your web browser.
+2. Click the green **Code** button, then click **Download ZIP**.
+3. Open your **Downloads** folder and double-click the downloaded file to
+   unzip it. You'll end up with a folder named `music-widget-main`.
+
+**Option B — Use `git clone` (a bit more setup, easier to update later)**
+
+1. Open the **Terminal** app: press `Cmd + Space`, type `Terminal`, press
+   Return. Terminal lets you type commands to your Mac instead of clicking —
+   for this guide you'll only need to copy/paste a couple of lines.
+2. Type the following and press Return to move into your Documents folder
+   (`cd` means "change directory"):
+   ```bash
+   cd ~/Documents
+   ```
+3. Type or paste the following and press Return:
+   ```bash
+   git clone https://github.com/shazibid/music-widget.git
+   ```
+   This downloads the code into a new folder named `music-widget` inside
+   Documents. The first time you use `git`, macOS may ask to install
+   "Command Line Developer Tools" — click **Install** and wait for it to
+   finish, then run the command above again.
+
+### 3. Open Terminal inside the project folder
+
+Everything from here on happens in Terminal, run from inside the project
+folder.
+
+1. Open **Terminal** if it isn't already open (`Cmd + Space`, type
+   `Terminal`, press Return).
+2. Type `cd ` — that's "c", "d", then a single space — but **don't press
+   Return yet**.
+3. Switch to **Finder**, find the project folder from step 2
+   (`music-widget-main` or `music-widget`), and drag that folder from Finder
+   directly onto the Terminal window. This types out its full location for
+   you.
+4. Click back in Terminal and press Return. Your prompt now represents
+   "inside" the project folder — every command below should be run here.
+
+### 4. Build and run
+
+In that same Terminal window, type:
 
 ```bash
 swift run
 ```
 
-This builds the `MusicWidget` executable target and launches it. Use
-`swift build -c release` for an optimized build (the binary will be at
-`.build/release/MusicWidget`).
+and press Return. The first run downloads dependencies and compiles the app,
+so it can take a minute or two and a lot of text will scroll by — that's
+normal, just let it finish. Once it's done, the widget appears in the
+top-right corner of your screen.
 
-Alternatively, open the folder in **Xcode** (File → Open… on `Package.swift`)
-or in **VS Code** with the Swift extension — a debug/release launch
-configuration is already set up in `.vscode/launch.json`.
+To use the app again later, repeat steps 3–4: open Terminal, `cd` into the
+project folder (Terminal usually remembers recent folders if you press the
+Up arrow to cycle through previous commands), then `swift run`.
+
+A few notes for later, once you're comfortable with the basics:
+
+- `swift build -c release` produces a faster, optimized build (the binary
+  ends up at `.build/release/MusicWidget`).
+- You can also open the project in **Xcode** (double-click `Package.swift`
+  inside the project folder) or in **VS Code** with the Swift extension — a
+  debug/release launch configuration is already set up in
+  `.vscode/launch.json`.
 
 The app has no windowed dock icon or menu bar item (it runs as an
 `.accessory` app) — after launching, look for the widget in the top-right
 corner of your main screen.
 
-### 2. Connect your Spotify account (optional, for Spotify queue support)
+### 5. Connect your Spotify account (optional, for Spotify queue support)
 
 Spotify's AppleScript dictionary can't report a queue, so the iPod skin's
 "Up Next" screen shows Spotify tracks only after you connect your account
 via the Spotify Web API:
 
-- Right-click the widget → **Connect Spotify Account…**. This opens your
+- Right-click the widget (on a trackpad: click with two fingers, or hold
+  `Control` and click) → **Connect Spotify Account…**. This opens your
   browser to Spotify's login/consent page (Authorization Code + PKCE, so no
   client secret is involved) and starts a short-lived local server on
   `127.0.0.1:8888` to catch the redirect.
@@ -93,16 +172,22 @@ swift run MusicWidget --print-queue
 This requires Spotify to be running and already connected via the menu
 above; it prints the queue as JSON and exits.
 
-### 3. Grant Automation permission
+### 6. Grant Automation permission
 
 MusicWidget talks to Spotify and Music.app via AppleScript, so the first time
-it tries to read a track or send a command, macOS will prompt you to allow
-MusicWidget to control Spotify and/or Music. Click **OK** on each prompt.
+it tries to read a track or send a command, macOS will pop up a dialog
+asking to let MusicWidget control Spotify and/or Music. Click **OK** on each
+one.
 
-If you miss the prompt or deny it by mistake, re-enable it manually:
+If you miss a prompt or click **Don't Allow** by mistake, you can turn it
+back on by hand:
 
-**System Settings → Privacy & Security → Automation → MusicWidget** →
-check **Spotify** and **Music**.
+1. Open **System Settings** (click the Apple logo in the top-left corner of
+   your screen → **System Settings…**).
+2. Click **Privacy & Security** in the sidebar.
+3. Click **Automation**.
+4. Find **MusicWidget** in the list and turn on the switches next to
+   **Spotify** and **Music**.
 
 Without this permission the widget will show "Nothing Playing" even while
 music is actively playing.
