@@ -19,12 +19,12 @@ struct PillView: View {
     }
 
     private var title: String {
-        if !viewModel.isSpotifyRunning { return "Spotify isn't running" }
+        if !viewModel.isSourceRunning { return "Nothing playing" }
         return viewModel.track?.name ?? "Nothing playing"
     }
 
     private var subtitle: String {
-        if !viewModel.isSpotifyRunning { return "Open Spotify to get started" }
+        if !viewModel.isSourceRunning { return "Open Spotify or Music to get started" }
         return viewModel.track?.artist ?? " "
     }
 
@@ -57,6 +57,6 @@ struct PillView: View {
         }
         .buttonStyle(.plain)
         .font(.system(size: 16, weight: .medium))
-        .disabled(!viewModel.isSpotifyRunning)
+        .disabled(!viewModel.isSourceRunning)
     }
 }

@@ -1,68 +1,56 @@
 import SwiftUI
 
+/// Overlays a live screen and real tap targets on top of the baked-in
+/// `ipod-body` artwork (a cropped device render — see Resources/) instead of
+/// hand-drawing the body/wheel in SwiftUI. All the geometry below was
+/// measured directly from that image's pixels, then scaled to `bodyWidth`.
 struct IPodView: View {
     @ObservedObject var viewModel: PlayerViewModel
 
     private let bodyWidth: CGFloat = 210
-    private let bodyHeight: CGFloat = 352
-    private let bodyCornerRadius: CGFloat = 32
-    private let contentWidth: CGFloat = 178
+    private let bodyHeight: CGFloat = 210 * (486.0 / 295.0)
+    private let scale: CGFloat = 210 / 295.0
+
+    /// Loaded via `NSImage(contentsOf:)` rather than `Image(_:bundle:)` —
+    /// the latter only resolves asset-catalog entries, not loose `.copy`
+    /// resources like this one.
+    private static let bodyImage: NSImage? = {
+        guard let url = Bundle.module.url(forResource: "ipod-body", withExtension: "png") else { return nil }
+        return NSImage(contentsOf: url)
+    }()
 
     var body: some View {
-        VStack(spacing: 14) {
+        ZStack {
+            if let bodyImage = Self.bodyImage {
+                Image(nsImage: bodyImage)
+                    .resizable()
+                    .frame(width: bodyWidth, height: bodyHeight)
+            }
+
             screen
-            clickWheel
+                .frame(width: screenSize.width, height: screenSize.height)
+                .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
+                .position(x: screenOrigin.x + screenSize.width / 2, y: screenOrigin.y + screenSize.height / 2)
+
+            wheelHitTargets
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 16)
-        .padding(.bottom, 14)
         .frame(width: bodyWidth, height: bodyHeight)
-        .background(metalBody)
-        .shadow(color: .black.opacity(0.4), radius: 16, y: 10)
-        .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
-    }
-
-    // MARK: - Body
-
-    /// Real iPod Classic bodies are mostly flat brushed steel with very soft
-    /// shading, not a strong stripe texture — a subtle diagonal gradient
-    /// plus a thin bevel reads closer to the real thing than heavy stripes.
-    private var metalBody: some View {
-        RoundedRectangle(cornerRadius: bodyCornerRadius, style: .continuous)
-            .fill(
-                LinearGradient(
-                    colors: [Color(white: 0.99), Color(white: 0.87), Color(white: 0.95)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: bodyCornerRadius, style: .continuous)
-                    .strokeBorder(
-                        LinearGradient(colors: [.white, Color(white: 0.75)], startPoint: .top, endPoint: .bottom),
-                        lineWidth: 1
-                    )
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: bodyCornerRadius, style: .continuous)
-                    .stroke(.black.opacity(0.15), lineWidth: 0.75)
-            )
     }
 
     // MARK: - Screen
 
     private var title: String {
-        if !viewModel.isSpotifyRunning { return "Nothing Playing" }
+        if !viewModel.isSourceRunning { return "Nothing Playing" }
         return viewModel.track?.name ?? "Nothing Playing"
     }
 
     private var subtitle: String {
-        if !viewModel.isSpotifyRunning { return "Open Spotify" }
+        if !viewModel.isSourceRunning { return "Open Spotify or Music" }
         return viewModel.track?.artist ?? " "
     }
 
-    private var screenSize: CGSize { CGSize(width: contentWidth, height: 132) }
-    private let screenCornerRadius: CGFloat = 14
+    private var screenOrigin: CGPoint { CGPoint(x: 32 * scale, y: 26 * scale) }
+    private var screenSize: CGSize { CGSize(width: 231 * scale, height: 175 * scale) }
 
     private var screen: some View {
         ZStack {
@@ -104,74 +92,64 @@ struct IPodView: View {
                 }
                 .foregroundStyle(.white)
             }
-
-            glassReflection
         }
-        .frame(width: screenSize.width, height: screenSize.height)
-        .clipShape(RoundedRectangle(cornerRadius: screenCornerRadius, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: screenCornerRadius, style: .continuous)
-                .strokeBorder(.black.opacity(0.7), lineWidth: 1)
-        )
     }
 
-    private var glassReflection: some View {
-        Ellipse()
-            .fill(.white.opacity(0.16))
-            .frame(width: 220, height: 60)
-            .rotationEffect(.degrees(-18))
-            .offset(x: 35, y: -30)
-            .blur(radius: 6)
-    }
+    // MARK: - Click wheel hit targets
 
-    // MARK: - Click wheel
+    private var wheelCenter: CGPoint { CGPoint(x: 147.5 * scale, y: 328.5 * scale) }
+    private var wheelDiameter: CGFloat { 169 * scale }
+    private var iconRadius: CGFloat { 72 * scale }
 
-    private let wheelDiameter: CGFloat = 178
-    private let centerButtonDiameter: CGFloat = 66
-
-    private var clickWheel: some View {
+    /// Clipped to the wheel's own circle so a pressed button's shadow stays
+    /// on the white ring instead of bleeding onto the plain body around it.
+    private var wheelHitTargets: some View {
         ZStack {
-            Circle()
-                .fill(
-                    RadialGradient(colors: [Color(white: 1.0), Color(white: 0.92)], center: .center, startRadius: 20, endRadius: wheelDiameter / 2)
-                )
-                .overlay(Circle().stroke(.black.opacity(0.12), lineWidth: 1))
-
-            Text("MENU")
-                .font(.system(size: 11, weight: .bold))
-                .offset(y: -wheelDiameter / 2 + 26)
-
-            Image(systemName: "backward.end.fill")
-                .font(.system(size: 13))
-                .offset(x: -(wheelDiameter / 2 - 26))
-                .contentShape(Circle())
-                .onTapGesture { viewModel.skipPrevious() }
-
-            Image(systemName: "forward.end.fill")
-                .font(.system(size: 13))
-                .offset(x: wheelDiameter / 2 - 26)
-                .contentShape(Circle())
-                .onTapGesture { viewModel.skipNext() }
-
-            Image(systemName: viewModel.state == .playing ? "pause.fill" : "play.fill")
-                .font(.system(size: 13))
-                .offset(y: wheelDiameter / 2 - 26)
-                .contentShape(Circle())
-                .onTapGesture { viewModel.togglePlayPause() }
-
-            Circle()
-                .fill(
-                    RadialGradient(colors: [Color(white: 0.97), Color(white: 0.86)], center: UnitPoint(x: 0.4, y: 0.35), startRadius: 4, endRadius: centerButtonDiameter / 2 + 10)
-                )
-                .overlay(Circle().stroke(.black.opacity(0.15), lineWidth: 1))
-                .frame(width: centerButtonDiameter, height: centerButtonDiameter)
-                .shadow(color: .black.opacity(0.2), radius: 1, y: 0.5)
-                .contentShape(Circle())
-                .onTapGesture { viewModel.togglePlayPause() }
+            hitTarget(diameter: 42, offset: CGPoint(x: 0, y: -iconRadius)) {
+                // Menu currently has no destination — reserved for future use.
+            }
+            hitTarget(diameter: 42, offset: CGPoint(x: -iconRadius, y: 0)) {
+                viewModel.skipPrevious()
+            }
+            hitTarget(diameter: 42, offset: CGPoint(x: iconRadius, y: 0)) {
+                viewModel.skipNext()
+            }
+            hitTarget(diameter: 42, offset: CGPoint(x: 0, y: iconRadius)) {
+                viewModel.togglePlayPause()
+            }
+            hitTarget(diameter: 50, offset: .zero) {
+                viewModel.togglePlayPause()
+            }
         }
-        .foregroundStyle(.black.opacity(0.55))
         .frame(width: wheelDiameter, height: wheelDiameter)
-        .opacity(viewModel.isSpotifyRunning ? 1 : 0.5)
-        .allowsHitTesting(viewModel.isSpotifyRunning)
+        .clipShape(Circle())
+        .position(wheelCenter)
+        .allowsHitTesting(viewModel.isSourceRunning)
+    }
+
+    private func hitTarget(diameter: CGFloat, offset: CGPoint, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Circle()
+                .fill(.clear)
+                .contentShape(Circle())
+        }
+        .buttonStyle(WheelButtonStyle())
+        .frame(width: diameter, height: diameter)
+        .offset(x: offset.x, y: offset.y)
+    }
+}
+
+/// Darkens the tapped spot with an inset-looking shadow so a click reads as
+/// the button being pushed into the wheel, since the icons themselves are
+/// baked into the body artwork and can't shift or highlight on their own.
+private struct WheelButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background(
+                Circle()
+                    .fill(.black.opacity(configuration.isPressed ? 0.06 : 0))
+                    .shadow(color: .black.opacity(configuration.isPressed ? 0.12 : 0), radius: 2, y: 0.5)
+            )
+            .animation(.easeOut(duration: 0.1), value: configuration.isPressed)
     }
 }

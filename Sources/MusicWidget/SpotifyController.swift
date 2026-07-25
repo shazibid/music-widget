@@ -1,26 +1,12 @@
 import AppKit
 import Foundation
 
-struct SpotifyTrack: Equatable {
-    let name: String
-    let artist: String
-    let album: String
-    let artworkURL: String
-    let duration: Double
-}
-
-enum SpotifyPlayerState: String {
-    case playing
-    case paused
-    case stopped
-}
-
-enum SpotifyController {
+enum SpotifyController: MediaAppController {
     static func isRunning() -> Bool {
         NSWorkspace.shared.runningApplications.contains { $0.bundleIdentifier == "com.spotify.client" }
     }
 
-    static func currentTrack() -> SpotifyTrack? {
+    static func currentTrack() -> Track? {
         guard isRunning() else { return nil }
         let script = """
         tell application "Spotify"
@@ -31,14 +17,14 @@ enum SpotifyController {
         guard let result = runAppleScript(script), !result.isEmpty else { return nil }
         let parts = result.components(separatedBy: "\u{241F}")
         guard parts.count == 5, let durationMs = Double(parts[4]) else { return nil }
-        return SpotifyTrack(name: parts[0], artist: parts[1], album: parts[2], artworkURL: parts[3], duration: durationMs / 1000)
+        return Track(name: parts[0], artist: parts[1], album: parts[2], artwork: .url(parts[3]), duration: durationMs / 1000)
     }
 
-    static func playerState() -> SpotifyPlayerState {
+    static func playerState() -> PlayerState {
         guard isRunning(), let result = runAppleScript(#"tell application "Spotify" to player state as string"#) else {
             return .stopped
         }
-        return SpotifyPlayerState(rawValue: result) ?? .stopped
+        return PlayerState(rawValue: result) ?? .stopped
     }
 
     static func playerPosition() -> Double {

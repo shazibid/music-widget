@@ -31,12 +31,12 @@ struct RotatingCDView: View {
     }
 
     private var title: String {
-        if !viewModel.isSpotifyRunning { return "Spotify isn't running" }
+        if !viewModel.isSourceRunning { return "Nothing playing" }
         return viewModel.track?.name ?? "Nothing playing"
     }
 
     private var subtitle: String {
-        if !viewModel.isSpotifyRunning { return "Open Spotify to get started" }
+        if !viewModel.isSourceRunning { return "Open Spotify or Music to get started" }
         return viewModel.track?.artist ?? " "
     }
 
@@ -70,7 +70,6 @@ struct RotatingCDView: View {
         }
         .frame(width: 160, height: 160)
         .rotationEffect(.degrees(angle))
-        .shadow(color: .black.opacity(0.4), radius: 10, y: 4)
     }
 
     private var controls: some View {
@@ -87,6 +86,6 @@ struct RotatingCDView: View {
         }
         .buttonStyle(.plain)
         .font(.system(size: 14, weight: .medium))
-        .disabled(!viewModel.isSpotifyRunning)
+        .disabled(!viewModel.isSourceRunning)
     }
 }

@@ -23,7 +23,7 @@ enum WidgetSkin: String, CaseIterable, Identifiable {
         case .pill: NSSize(width: 320, height: 68)
         case .cd: NSSize(width: 240, height: 300)
         case .vinyl: NSSize(width: 240, height: 300)
-        case .ipod: NSSize(width: 210, height: 352)
+        case .ipod: NSSize(width: 210, height: 346)
         }
     }
 
