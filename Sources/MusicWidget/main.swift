@@ -54,8 +54,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         if let screen = NSScreen.main {
             let visible = screen.visibleFrame
-            let origin = NSPoint(x: visible.maxX - 20 - initialSize.width, y: visible.maxY - 20 - initialSize.height)
-            window.setFrameOrigin(origin)
+            if var origin = skinStore.windowOrigin {
+                // Clamp in case the saved spot came from a screen/resolution
+                // that's no longer available (e.g. an external monitor).
+                origin.x = min(max(origin.x, visible.minX), visible.maxX - initialSize.width)
+                origin.y = min(max(origin.y, visible.minY), visible.maxY - initialSize.height)
+                window.setFrameOrigin(origin)
+            } else {
+                let origin = NSPoint(x: visible.maxX - 20 - initialSize.width, y: visible.maxY - 20 - initialSize.height)
+                window.setFrameOrigin(origin)
+            }
         }
 
         window.makeKeyAndOrderFront(nil)
@@ -152,6 +160,17 @@ extension AppDelegate: NSWindowDelegate {
     func windowDidEndLiveResize(_ notification: Notification) {
         guard let window, skinStore.skin.isWidthResizable else { return }
         skinStore.pillWidth = window.frame.width
+    }
+
+    /// Remembers the widget's on-screen position for next launch. Fires for
+    /// both a user drag and the programmatic skin-switch animation in
+    /// `resizeWindow`, which is fine — either way it's where the window
+    /// actually ended up. Guarding on `self.window` (unset until the initial
+    /// placement in `applicationDidFinishLaunching` completes) keeps that
+    /// startup placement from immediately overwriting itself.
+    func windowDidMove(_ notification: Notification) {
+        guard let window else { return }
+        skinStore.windowOrigin = window.frame.origin
     }
 }
 

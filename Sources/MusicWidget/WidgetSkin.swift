@@ -65,6 +65,8 @@ final class SkinStore: ObservableObject {
 
     private static let defaultsKey = "selectedSkin"
     private static let pillWidthDefaultsKey = "pillWidth"
+    private static let windowOriginXKey = "windowOriginX"
+    private static let windowOriginYKey = "windowOriginY"
 
     init() {
         let saved = UserDefaults.standard.string(forKey: Self.defaultsKey).flatMap(WidgetSkin.init(rawValue:))
@@ -81,6 +83,23 @@ final class SkinStore: ObservableObject {
         }
         set {
             UserDefaults.standard.set(Double(newValue), forKey: Self.pillWidthDefaultsKey)
+        }
+    }
+
+    /// The window's last on-screen position, remembered across launches.
+    /// `nil` until the window has moved at least once, so a fresh install
+    /// falls back to `AppDelegate`'s default top-right placement.
+    var windowOrigin: NSPoint? {
+        get {
+            guard UserDefaults.standard.object(forKey: Self.windowOriginXKey) != nil else { return nil }
+            let x = UserDefaults.standard.double(forKey: Self.windowOriginXKey)
+            let y = UserDefaults.standard.double(forKey: Self.windowOriginYKey)
+            return NSPoint(x: x, y: y)
+        }
+        set {
+            guard let newValue else { return }
+            UserDefaults.standard.set(Double(newValue.x), forKey: Self.windowOriginXKey)
+            UserDefaults.standard.set(Double(newValue.y), forKey: Self.windowOriginYKey)
         }
     }
 }
