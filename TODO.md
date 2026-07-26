@@ -107,7 +107,7 @@ install and use this." Grouped by front, roughly in priority order.
 
 ## 9. Security
 
-- [ ] PKCE flow already does the right things (state-param CSRF check,
+- [X] PKCE flow already does the right things (state-param CSRF check,
       code_verifier/challenge, refresh token in Keychain, loopback-only
       callback server) — no action needed, just noting it's already solid.
 - [ ] Do a pass confirming no secrets belong in `SpotifyAuthConfig.swift`

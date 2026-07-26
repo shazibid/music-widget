@@ -2,23 +2,28 @@ import SwiftUI
 
 /// A single-line text view that scrolls continuously to the left when its
 /// content is wider than the space available, instead of truncating with an
-/// ellipsis.
+/// ellipsis. Sibling `MarqueeText`s sharing a `MarqueeSync` rest and restart
+/// together — see that type for why.
 struct MarqueeText: View {
     let text: String
     var font: Font
     var color: Color = .primary
+    @ObservedObject var sync: MarqueeSync
 
     private static let speed: CGFloat = 40 // points per second
     private static let gap: CGFloat = 20 // space between looping copies
-    private static let pause: Double = 1.5 // rest at the start of each loop
 
     @State private var containerWidth: CGFloat = 0
     @State private var textWidth: CGFloat = 0
     @State private var offset: CGFloat = 0
+    @State private var id = UUID()
 
     private var overflowing: Bool {
         textWidth > containerWidth + 1
     }
+
+    private var distance: CGFloat { textWidth + Self.gap }
+    private var duration: Double { Double(distance / Self.speed) }
 
     var body: some View {
         Text(text)
@@ -53,8 +58,12 @@ struct MarqueeText: View {
                         }
                         .fixedSize(horizontal: true, vertical: false)
                         .offset(x: offset)
-                        .task(id: LoopKey(text: text, distance: textWidth + Self.gap)) {
-                            await scroll(distance: textWidth + Self.gap)
+                        .onChange(of: duration, initial: true) { _, newValue in
+                            sync.register(id: id, duration: newValue)
+                        }
+                        .onDisappear { sync.unregister(id: id) }
+                        .task(id: sync.phase) {
+                            await follow(sync.phase)
                         }
                     }
                 }
@@ -69,22 +78,15 @@ struct MarqueeText: View {
             .lineLimit(1)
     }
 
-    private struct LoopKey: Equatable {
-        let text: String
-        let distance: CGFloat
-    }
-
-    private func scroll(distance: CGFloat) async {
-        offset = 0
-        guard distance > Self.gap + 1 else { return }
-        let duration = Double(distance / Self.speed)
-        while !Task.isCancelled {
-            try? await Task.sleep(for: .seconds(Self.pause))
-            guard !Task.isCancelled else { return }
+    private func follow(_ phase: MarqueeSync.Phase) async {
+        switch phase {
+        case .resting:
+            offset = 0
+        case .scrolling(let generation):
             withAnimation(.linear(duration: duration)) { offset = -distance }
             try? await Task.sleep(for: .seconds(duration))
             guard !Task.isCancelled else { return }
-            offset = 0 // instant snap back; identical on-screen to -distance since the copies loop seamlessly
+            sync.markFinished(id: id, generation: generation)
         }
     }
 }

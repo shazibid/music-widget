@@ -8,6 +8,7 @@ struct SpinningDiscSkin<Disc: View>: View {
     @ViewBuilder var disc: () -> Disc
 
     @State private var angle: Double = 0
+    @StateObject private var marqueeSync = MarqueeSync()
 
     private let ticker = Timer.publish(every: 1.0 / 30.0, on: .main, in: .common).autoconnect()
     private let degreesPerTick: Double = 1.2
@@ -17,18 +18,18 @@ struct SpinningDiscSkin<Disc: View>: View {
             disc()
                 .frame(width: 160, height: 160)
                 .rotationEffect(.degrees(angle))
-            VStack(spacing: 2) {
-                Text(viewModel.nowPlayingTitle)
-                    .font(.system(size: 13, weight: .semibold))
-                    .lineLimit(1)
-                    .accessibilityIdentifier(AccessibilityID.nowPlayingTitle)
-                Text(viewModel.nowPlayingSubtitle)
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .accessibilityIdentifier(AccessibilityID.nowPlayingSubtitle)
+            VStack(spacing: 8) {
+                VStack(spacing: 2) {
+                    MarqueeText(text: viewModel.nowPlayingTitle, font: .system(size: 13, weight: .semibold), sync: marqueeSync)
+                        .accessibilityIdentifier(AccessibilityID.nowPlayingTitle)
+                    MarqueeText(text: viewModel.nowPlayingSubtitle, font: .system(size: 11), color: .secondary, sync: marqueeSync)
+                        .accessibilityIdentifier(AccessibilityID.nowPlayingSubtitle)
+                }
+                if viewModel.duration > 0 {
+                    PlaybackProgressView(elapsed: viewModel.elapsed, duration: viewModel.duration)
+                }
             }
-            PlaybackControlButtons(viewModel: viewModel, fontSize: 14)
+            PlaybackControlButtons(viewModel: viewModel, fontSize: 18)
         }
         .padding(20)
         .frame(width: 240, height: 300)

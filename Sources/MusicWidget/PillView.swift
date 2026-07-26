@@ -11,6 +11,7 @@ struct PillView: View {
     private static let progressBarThreshold: CGFloat = 420
 
     @State private var currentWidth: CGFloat = 320
+    @StateObject private var marqueeSync = MarqueeSync()
 
     private var showsProgressBar: Bool {
         currentWidth >= Self.progressBarThreshold && viewModel.duration > 0
@@ -20,13 +21,13 @@ struct PillView: View {
         HStack(spacing: 12) {
             artwork
             VStack(alignment: .leading, spacing: 2) {
-                MarqueeText(text: viewModel.nowPlayingTitle, font: .system(size: 13, weight: .semibold))
+                MarqueeText(text: viewModel.nowPlayingTitle, font: .system(size: 13, weight: .semibold), sync: marqueeSync)
                     .accessibilityIdentifier(AccessibilityID.nowPlayingTitle)
-                MarqueeText(text: viewModel.nowPlayingSubtitle, font: .system(size: 11), color: .secondary)
+                MarqueeText(text: viewModel.nowPlayingSubtitle, font: .system(size: 11), color: .secondary, sync: marqueeSync)
                     .accessibilityIdentifier(AccessibilityID.nowPlayingSubtitle)
             }
             if showsProgressBar {
-                progressGroup
+                PlaybackProgressView(elapsed: viewModel.elapsed, duration: viewModel.duration)
             } else {
                 Spacer(minLength: 8)
             }
@@ -44,45 +45,6 @@ struct PillView: View {
         )
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier(AccessibilityID.pillRoot)
-    }
-
-    private var progressGroup: some View {
-        HStack(spacing: 6) {
-            timeLabel(viewModel.elapsed)
-            progressBar
-            timeLabel(viewModel.duration)
-        }
-    }
-
-    private func timeLabel(_ seconds: TimeInterval) -> some View {
-        Text(Self.formatTime(seconds))
-            .font(.system(size: 10, weight: .medium))
-            .monospacedDigit()
-            .foregroundStyle(.secondary)
-    }
-
-    private var progressBar: some View {
-        GeometryReader { proxy in
-            ZStack(alignment: .leading) {
-                Capsule().fill(.primary.opacity(0.12))
-                Capsule()
-                    .fill(.primary.opacity(0.8))
-                    .frame(width: max(3, proxy.size.width * fraction))
-                    .animation(.linear(duration: 1), value: fraction)
-            }
-        }
-        .frame(minWidth: 40, maxWidth: .infinity)
-        .frame(height: 4)
-    }
-
-    private var fraction: Double {
-        guard viewModel.duration > 0 else { return 0 }
-        return min(max(viewModel.elapsed / viewModel.duration, 0), 1)
-    }
-
-    private static func formatTime(_ seconds: TimeInterval) -> String {
-        let total = max(0, Int(seconds.rounded()))
-        return String(format: "%d:%02d", total / 60, total % 60)
     }
 
     private var artwork: some View {
