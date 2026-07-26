@@ -5,7 +5,7 @@ enum SpotifyController: MediaAppController {
     /// Spotify's scripting dictionary exposes only `current track` — no
     /// queue or playlist enumeration — so upcoming tracks can only come from
     /// the Web API, and only once the user has connected their account.
-    static var supportsQueue: Bool { SpotifyKeychainStore.hasRefreshToken() }
+    static var supportsQueue: Bool { SpotifyTokenStore.hasRefreshToken() }
 
     static func isRunning() -> Bool {
         NSWorkspace.shared.runningApplications.contains { $0.bundleIdentifier == "com.spotify.client" }

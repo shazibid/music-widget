@@ -141,7 +141,33 @@ The app has no windowed dock icon or menu bar item (it runs as an
 `.accessory` app) — after launching, look for the widget in the top-right
 corner of your main screen.
 
-### 5. Connect your Spotify account (optional, for Spotify queue support)
+### 5. (Optional) Build a real, double-clickable app
+
+`swift run` is fine for trying it out, but it only lasts for that Terminal
+session and never shows up in `/Applications` or Spotlight. To get an actual
+**MusicWidget.app** you can drag into Applications and launch normally from
+then on:
+
+```bash
+./Packaging/build-app.sh
+```
+
+This builds a release binary and assembles it into `dist/MusicWidget.app`.
+Drag that into `/Applications` (or wherever you like) and double-click it
+like any other app.
+
+This build is only **ad-hoc signed**, not notarized by Apple (that requires
+a paid Apple Developer account), so the first time you open it macOS will
+warn that it's from an "unidentified developer" and refuse to launch it
+normally. To get past that once:
+
+1. **Right-click** (or Control-click) `MusicWidget.app` and choose **Open**.
+2. Click **Open** again in the dialog that appears.
+
+After that first approval, it launches normally every time, including from
+the Dock or Spotlight.
+
+### 6. Connect your Spotify account (optional, for Spotify queue support)
 
 Spotify's AppleScript dictionary can't report a queue, so the iPod skin's
 "Up Next" screen shows Spotify tracks only after you connect your account
@@ -172,7 +198,7 @@ swift run MusicWidget --print-queue
 This requires Spotify to be running and already connected via the menu
 above; it prints the queue as JSON and exits.
 
-### 6. Grant Automation permission
+### 7. Grant Automation permission
 
 MusicWidget talks to Spotify and Music.app via AppleScript, so the first time
 it tries to read a track or send a command, macOS will pop up a dialog
@@ -252,6 +278,11 @@ Sources/MusicWidget/
 │   └── SpotifyWebAPI.swift            # `/me/player/queue` fetch + active-device matching
 └── Resources/
     └── ipod-body.png          # Device artwork used by the iPod skin
+
+Packaging/
+├── build-app.sh                # Assembles dist/MusicWidget.app from a release build
+├── Info.plist                  # App bundle metadata (bundle ID, version, permission strings)
+└── AppIcon.icns                # App icon (placeholder — see Known limitations)
 ```
 
 ## Known limitations
@@ -270,3 +301,10 @@ Sources/MusicWidget/
 - No Apple Music API integration — Apple Music support is local AppleScript
   only, so it only reflects the Music.app instance actually running on your
   Mac.
+- **The prebuilt app is ad-hoc signed only, not notarized** — Apple notarization
+  requires a paid Developer ID account. Until that's set up, a freshly
+  downloaded/built copy needs one right-click-Open to get past Gatekeeper
+  (see step 5 above).
+- **`Packaging/AppIcon.icns` is a placeholder** generated directly from the
+  iPod skin's artwork — worth swapping for original artwork before any wider
+  release, for the same reasons as the skin itself.

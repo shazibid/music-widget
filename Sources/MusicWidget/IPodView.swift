@@ -14,11 +14,25 @@ struct IPodView: View {
     private let scale: CGFloat = 210 / 295.0
 
     /// Loaded via `NSImage(contentsOf:)` rather than `Image(_:bundle:)` —
-    /// the latter only resolves asset-catalog entries, not loose `.copy`
-    /// resources like this one.
+    /// the latter only resolves asset-catalog entries, not loose resources
+    /// like this one. Deliberately avoids `Bundle.module`: its generated
+    /// accessor falls back to a hardcoded absolute build path when the
+    /// resource isn't where it expects, which crashes on any machine but
+    /// the one that built the binary — a real risk for a packaged .app,
+    /// since codesign refuses to seal a bundle with loose content sitting
+    /// outside `Contents/` (which is where `Bundle.module` looks). Looking
+    /// under `Bundle.main` instead finds a plain copy placed in
+    /// `Contents/Resources` (see Packaging/build-app.sh), with a
+    /// source-relative fallback for `swift run`/Xcode debugging.
     private static let bodyImage: NSImage? = {
-        guard let url = Bundle.module.url(forResource: "ipod-body", withExtension: "png") else { return nil }
-        return NSImage(contentsOf: url)
+        if let url = Bundle.main.url(forResource: "ipod-body", withExtension: "png"),
+           let image = NSImage(contentsOf: url) {
+            return image
+        }
+        let devURL = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .appendingPathComponent("Resources/ipod-body.png")
+        return NSImage(contentsOf: devURL)
     }()
 
     /// The artwork's canvas is taller than the device itself: it reserves

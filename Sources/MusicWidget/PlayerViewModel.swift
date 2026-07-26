@@ -113,7 +113,7 @@ final class PlayerViewModel: ObservableObject {
 
     /// Whether the user has connected a Spotify account — gates the
     /// "Connect"/"Disconnect" menu item's label.
-    var isSpotifyConnected: Bool { SpotifyKeychainStore.hasRefreshToken() }
+    var isSpotifyConnected: Bool { SpotifyTokenStore.hasRefreshToken() }
 
     /// Opens the system browser for the PKCE login flow. Refreshes right
     /// after so `queueSupported`/`isSpotifyConnected` reflect the new state
@@ -123,10 +123,27 @@ final class PlayerViewModel: ObservableObject {
             do {
                 try await SpotifyAuthManager.shared.login()
                 refresh()
+            } catch SpotifyAuthManager.AuthError.userDenied {
+                // User declined on Spotify's own consent screen — their call, not an error.
+            } catch LoopbackCallbackServer.ServerError.timedOut {
+                Self.showSpotifyConnectAlert(
+                    "Couldn't connect to Spotify in time. This is often because Spotify currently "
+                    + "limits this feature to a small number of approved accounts — a restriction "
+                    + "Spotify imposes on small developer apps, not something this app controls. "
+                    + "Apple Music isn't affected."
+                )
             } catch {
-                print("Spotify login failed: \(error)")
+                Self.showSpotifyConnectAlert("Couldn't connect to Spotify. Please try again in a moment.")
             }
         }
+    }
+
+    private static func showSpotifyConnectAlert(_ message: String) {
+        let alert = NSAlert()
+        alert.messageText = "Spotify Connection Failed"
+        alert.informativeText = message
+        alert.alertStyle = .informational
+        alert.runModal()
     }
 
     func disconnectSpotify() {

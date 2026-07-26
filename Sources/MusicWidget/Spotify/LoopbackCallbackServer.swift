@@ -84,9 +84,15 @@ enum LoopbackCallbackServer {
         case invalidPort
         case listenerFailed(Error)
         case invalidRequest
+        /// No redirect ever arrived. In particular, Spotify apps stuck in
+        /// Development Mode (capped at 5 allowlisted users) reject
+        /// unapproved accounts on Spotify's own consent page and never
+        /// redirect back at all — without this timeout that looks
+        /// identical to the login simply hanging forever.
+        case timedOut
     }
 
-    static func waitForCallback(port: UInt16) async throws -> URLComponents {
+    static func waitForCallback(port: UInt16, timeout: TimeInterval = 90) async throws -> URLComponents {
         guard let nwPort = NWEndpoint.Port(rawValue: port) else { throw ServerError.invalidPort }
         let listener = try NWListener(using: .tcp, on: nwPort)
 
@@ -106,6 +112,11 @@ enum LoopbackCallbackServer {
                 }
             }
             listener.start(queue: .main)
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + timeout) {
+                resume.callback(with: .failure(ServerError.timedOut))
+                listener.cancel()
+            }
         }
     }
 

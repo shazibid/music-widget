@@ -59,7 +59,7 @@ actor SpotifyAuthManager {
     func logout() {
         accessToken = nil
         accessTokenExpiry = nil
-        SpotifyKeychainStore.clear()
+        SpotifyTokenStore.clear()
     }
 
     /// Returns a live access token, refreshing via the stored refresh token
@@ -68,7 +68,7 @@ actor SpotifyAuthManager {
         if let accessToken, let accessTokenExpiry, accessTokenExpiry > Date() {
             return accessToken
         }
-        guard let refreshToken = SpotifyKeychainStore.loadRefreshToken() else {
+        guard let refreshToken = SpotifyTokenStore.loadRefreshToken() else {
             throw AuthError.notAuthenticated
         }
         try await refresh(using: refreshToken)
@@ -85,7 +85,7 @@ actor SpotifyAuthManager {
             "code_verifier": verifier
         ])
         if let newRefreshToken = decoded.refreshToken {
-            SpotifyKeychainStore.save(refreshToken: newRefreshToken)
+            SpotifyTokenStore.save(refreshToken: newRefreshToken)
         }
     }
 
@@ -99,7 +99,7 @@ actor SpotifyAuthManager {
         // always — only write to Keychain (and re-trigger its access
         // prompt) when the value actually changed.
         if let newRefreshToken = decoded.refreshToken, newRefreshToken != refreshToken {
-            SpotifyKeychainStore.save(refreshToken: newRefreshToken)
+            SpotifyTokenStore.save(refreshToken: newRefreshToken)
         }
     }
 

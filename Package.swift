@@ -7,8 +7,7 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "MusicWidget",
-            path: "Sources/MusicWidget",
-            resources: [.copy("Resources/ipod-body.png")]
+            path: "Sources/MusicWidget"
         )
     ]
 )
