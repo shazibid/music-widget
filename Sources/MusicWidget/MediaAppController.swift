@@ -64,3 +64,20 @@ protocol MediaAppController {
     /// to the Web API; Apple Music's stays a synchronous AppleScript call.
     static func queue(matching localTrack: Track?) async -> QueueFetchResult
 }
+
+extension MediaAppController {
+    /// Runs `source` synchronously via `NSAppleScript`, returning its string
+    /// result — shared by every controller since they all talk to their app
+    /// the same way, just with different scripts.
+    @discardableResult
+    static func runAppleScript(_ source: String) -> String? {
+        var error: NSDictionary?
+        guard let script = NSAppleScript(source: source) else { return nil }
+        let output = script.executeAndReturnError(&error)
+        if let error {
+            print("AppleScript error: \(error)")
+            return nil
+        }
+        return output.stringValue
+    }
+}

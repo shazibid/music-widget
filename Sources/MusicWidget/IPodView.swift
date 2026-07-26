@@ -100,6 +100,8 @@ struct IPodView: View {
         .offset(x: -deviceBounds.minX, y: -deviceBounds.minY)
         .frame(width: deviceBounds.width, height: deviceBounds.height, alignment: .topLeading)
         .clipped()
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(AccessibilityID.ipodRoot)
         .onChange(of: viewModel.isSourceRunning) { _, isRunning in
             if !isRunning {
                 showingQueue = false
@@ -160,10 +162,12 @@ struct IPodView: View {
                             Text(title)
                                 .font(.system(size: 11, weight: .semibold))
                                 .lineLimit(1)
+                                .accessibilityIdentifier(AccessibilityID.nowPlayingTitle)
                             Text(subtitle)
                                 .font(.system(size: 9))
                                 .foregroundStyle(.white.opacity(0.8))
                                 .lineLimit(1)
+                                .accessibilityIdentifier(AccessibilityID.nowPlayingSubtitle)
                         }
                         Spacer(minLength: 4)
                     }

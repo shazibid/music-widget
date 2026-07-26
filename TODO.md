@@ -85,13 +85,22 @@ install and use this." Grouped by front, roughly in priority order.
 
 ## 8. Testing & CI
 
-- [ ] **No automated tests exist.** At minimum, add a CI workflow
-      (`.github/workflows/`) that runs `swift build` on every push/PR so
-      broken builds get caught before merge — there's currently nothing
-      stopping a bad commit from landing on `main`.
-- [ ] Consider unit tests around the parts that don't need a live
-      Spotify/Music.app session (AppleScript response parsing, PKCE
-      verifier/challenge generation, queue-matching logic).
+- [x] Added a CI workflow (`.github/workflows/ci.yml`) that runs
+      `swift build` + unit tests on every push/PR (the actual merge gate),
+      plus an advisory E2E job — see README's "Testing" section.
+- [x] Added unit tests (`Tests/MusicWidgetTests`) around the parts that
+      don't need a live Spotify/Music.app session: AppleScript response
+      parsing, PKCE verifier/challenge generation, queue-matching logic,
+      `PlayerViewModel` source selection, skin/window persistence, and the
+      OAuth loopback server's request parsing.
+- [x] Added an E2E smoke suite (`MusicWidgetUITests.xcodeproj`, real
+      XCUITest) covering skin switching, playback controls, and the
+      now-playing display, driven by a `#if DEBUG` fake-player harness so it
+      doesn't need Spotify/Music installed.
+- [ ] The E2E CI job is advisory only (`continue-on-error`) because it's
+      unverified whether GitHub's hosted macOS runners have the
+      Accessibility permission XCUITest needs pre-granted. Confirm on a
+      real PR and promote it to a blocking check if it's reliably green.
 
 ## 9. Security
 

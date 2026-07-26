@@ -134,17 +134,20 @@ actor SpotifyAuthManager {
         }
     }
 
-    private static func randomURLSafeString(length: Int) -> String {
+    /// Internal (not `private`) so `@testable import` can exercise these
+    /// pure helpers directly, without going through the network-bound
+    /// `login()`/`refresh()` flow.
+    static func randomURLSafeString(length: Int) -> String {
         var bytes = [UInt8](repeating: 0, count: length)
         _ = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
         return Data(bytes).base64URLEncodedString()
     }
 
-    private static func codeChallenge(for verifier: String) -> String {
+    static func codeChallenge(for verifier: String) -> String {
         Data(SHA256.hash(data: Data(verifier.utf8))).base64URLEncodedString()
     }
 
-    private static func formEncode(_ params: [String: String]) -> Data {
+    static func formEncode(_ params: [String: String]) -> Data {
         params.map { key, value in
             let encoded = value.addingPercentEncoding(withAllowedCharacters: .urlQueryValueAllowed) ?? value
             return "\(key)=\(encoded)"

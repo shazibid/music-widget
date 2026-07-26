@@ -207,6 +207,16 @@ if CommandLine.arguments.contains("--print-queue") {
     exit(0)
 }
 
+#if DEBUG
+// Lets the XCUITest smoke suite (Tests/MusicWidgetUITests) drive the real
+// UI against deterministic fake playback data instead of a live Spotify/
+// Music session. Only reachable in debug builds — release/dist builds
+// never check this env var.
+if ProcessInfo.processInfo.environment["MUSICWIDGET_UI_TEST"] == "1" {
+    PlayerViewModel.useControllers([FakeMediaAppController.self])
+}
+#endif
+
 let app = NSApplication.shared
 let delegate = AppDelegate()
 app.delegate = delegate

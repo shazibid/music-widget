@@ -19,13 +19,21 @@ enum AppleMusicController: MediaAppController {
             return (name of current track) & "\u{241F}" & (artist of current track) & "\u{241F}" & (album of current track) & "\u{241F}" & (duration of current track)
         end tell
         """
-        guard let result = runAppleScript(script), !result.isEmpty else { return nil }
-        let parts = result.components(separatedBy: "\u{241F}")
-        guard parts.count == 4 else { return nil }
+        guard let fields = parseTrackFields(runAppleScript(script)) else { return nil }
         let artwork = fetchArtwork().map(ArtworkSource.data)
+        return Track(name: fields.name, artist: fields.artist, album: fields.album, artwork: artwork, duration: fields.duration)
+    }
+
+    /// Splits the `\u{241F}`-delimited AppleScript result into the plain
+    /// text fields (artwork is fetched separately — see `fetchArtwork`).
+    /// Pure and testable without `NSAppleScript` or a running Music.app.
+    static func parseTrackFields(_ raw: String?) -> (name: String, artist: String, album: String, duration: TimeInterval)? {
+        guard let raw, !raw.isEmpty else { return nil }
+        let parts = raw.components(separatedBy: "\u{241F}")
+        guard parts.count == 4 else { return nil }
         // Music reports `duration of current track` in seconds already.
         let duration = Double(parts[3]) ?? 0
-        return Track(name: parts[0], artist: parts[1], album: parts[2], artwork: artwork, duration: duration)
+        return (parts[0], parts[1], parts[2], duration)
     }
 
     static func playerState() -> PlayerState {
@@ -84,12 +92,19 @@ enum AppleMusicController: MediaAppController {
             end try
         end tell
         """
-        guard let result = runAppleScript(script), !result.isEmpty else { return .tracks([]) }
-        return .tracks(result.components(separatedBy: "\u{241F}").compactMap { item in
+        return .tracks(parseQueueItems(runAppleScript(script)))
+    }
+
+    /// Splits the `\u{241F}`/`\u{241E}`-delimited AppleScript queue result
+    /// into `QueueTrack`s. Pure and testable without `NSAppleScript` or a
+    /// running Music.app.
+    static func parseQueueItems(_ raw: String?) -> [QueueTrack] {
+        guard let raw, !raw.isEmpty else { return [] }
+        return raw.components(separatedBy: "\u{241F}").compactMap { item in
             let parts = item.components(separatedBy: "\u{241E}")
             guard parts.count == 2 else { return nil }
             return QueueTrack(name: parts[0], artist: parts[1])
-        })
+        }
     }
 
     /// Unlike Spotify, Music has no artwork URL — the artwork only exists as
@@ -106,17 +121,5 @@ enum AppleMusicController: MediaAppController {
         let output = appleScript.executeAndReturnError(&error)
         guard error == nil, !output.data.isEmpty else { return nil }
         return output.data
-    }
-
-    @discardableResult
-    private static func runAppleScript(_ source: String) -> String? {
-        var error: NSDictionary?
-        guard let script = NSAppleScript(source: source) else { return nil }
-        let output = script.executeAndReturnError(&error)
-        if let error {
-            print("AppleScript error: \(error)")
-            return nil
-        }
-        return output.stringValue
     }
 }

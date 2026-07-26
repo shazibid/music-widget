@@ -35,6 +35,7 @@ struct RootView: View {
                         Text(option.displayName)
                     }
                 }
+                .accessibilityIdentifier(AccessibilityID.skinMenuItem(option))
             }
             Divider()
             if viewModel.isSpotifyConnected {
@@ -45,6 +46,7 @@ struct RootView: View {
             Divider()
             Button("Minimize") { onMinimize() }
             Button("Quit") { NSApp.terminate(nil) }
+                .accessibilityIdentifier(AccessibilityID.quitMenuItem)
         }
     }
 }
