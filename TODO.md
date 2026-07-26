@@ -97,10 +97,13 @@ install and use this." Grouped by front, roughly in priority order.
       XCUITest) covering skin switching, playback controls, and the
       now-playing display, driven by a `#if DEBUG` fake-player harness so it
       doesn't need Spotify/Music installed.
-- [ ] The E2E CI job is advisory only (`continue-on-error`) because it's
-      unverified whether GitHub's hosted macOS runners have the
-      Accessibility permission XCUITest needs pre-granted. Confirm on a
-      real PR and promote it to a blocking check if it's reliably green.
+- [x] Confirmed on PR #2: GitHub's hosted `macos-latest` runner has the
+      Accessibility permission XCUITest needs pre-granted — `e2e-smoke`
+      passed there, not just locally.
+- [ ] That's one data point, not "reliably green." `unit-tests` is already
+      a required branch-protection check on `main`; `e2e-smoke` is still
+      `continue-on-error`. Leave it advisory for a few more PRs to see if
+      it stays green before promoting it to required too.
 
 ## 9. Security
 
