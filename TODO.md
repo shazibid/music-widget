@@ -3,6 +3,13 @@
 Everything that stands between "works on my Mac" and "a stranger on GitHub can
 install and use this." Grouped by front, roughly in priority order.
 
+## 0. UI Changes
+
+- [ ] Full screen mode for pill, cd, and vinyl views
+- [ ] iPod stickers
+- [ ] iPod stickers app to add and modify iPod
+- [ ] View for older mac versions not compatibile with liquid glass
+
 ## 1. Spotify API access — blocking
 
 - [ ] **Get out of Development Mode.** `SpotifyAuthConfig.clientID` points at
