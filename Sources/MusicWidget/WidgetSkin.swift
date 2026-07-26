@@ -60,7 +60,7 @@ enum WidgetSkin: String, CaseIterable, Identifiable {
 @MainActor
 final class SkinStore: ObservableObject {
     @Published var skin: WidgetSkin {
-        didSet { UserDefaults.standard.set(skin.rawValue, forKey: Self.defaultsKey) }
+        didSet { defaults.set(skin.rawValue, forKey: Self.defaultsKey) }
     }
 
     private static let defaultsKey = "selectedSkin"
@@ -68,8 +68,14 @@ final class SkinStore: ObservableObject {
     private static let windowOriginXKey = "windowOriginX"
     private static let windowOriginYKey = "windowOriginY"
 
-    init() {
-        let saved = UserDefaults.standard.string(forKey: Self.defaultsKey).flatMap(WidgetSkin.init(rawValue:))
+    private let defaults: UserDefaults
+
+    /// `defaults` is injectable so tests can point at an isolated
+    /// `UserDefaults(suiteName:)` instead of polluting the real app's
+    /// `.standard` domain.
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        let saved = defaults.string(forKey: Self.defaultsKey).flatMap(WidgetSkin.init(rawValue:))
         skin = saved ?? .pill
     }
 
@@ -77,12 +83,12 @@ final class SkinStore: ObservableObject {
     /// and skin switches. Defaults to the pill's original design width.
     var pillWidth: CGFloat {
         get {
-            let stored = UserDefaults.standard.double(forKey: Self.pillWidthDefaultsKey)
+            let stored = defaults.double(forKey: Self.pillWidthDefaultsKey)
             let width = stored > 0 ? CGFloat(stored) : WidgetSkin.pill.windowSize.width
             return min(max(width, WidgetSkin.pillMinWidth), WidgetSkin.pillMaxWidth)
         }
         set {
-            UserDefaults.standard.set(Double(newValue), forKey: Self.pillWidthDefaultsKey)
+            defaults.set(Double(newValue), forKey: Self.pillWidthDefaultsKey)
         }
     }
 
@@ -91,15 +97,15 @@ final class SkinStore: ObservableObject {
     /// falls back to `AppDelegate`'s default top-right placement.
     var windowOrigin: NSPoint? {
         get {
-            guard UserDefaults.standard.object(forKey: Self.windowOriginXKey) != nil else { return nil }
-            let x = UserDefaults.standard.double(forKey: Self.windowOriginXKey)
-            let y = UserDefaults.standard.double(forKey: Self.windowOriginYKey)
+            guard defaults.object(forKey: Self.windowOriginXKey) != nil else { return nil }
+            let x = defaults.double(forKey: Self.windowOriginXKey)
+            let y = defaults.double(forKey: Self.windowOriginYKey)
             return NSPoint(x: x, y: y)
         }
         set {
             guard let newValue else { return }
-            UserDefaults.standard.set(Double(newValue.x), forKey: Self.windowOriginXKey)
-            UserDefaults.standard.set(Double(newValue.y), forKey: Self.windowOriginYKey)
+            defaults.set(Double(newValue.x), forKey: Self.windowOriginXKey)
+            defaults.set(Double(newValue.y), forKey: Self.windowOriginYKey)
         }
     }
 }

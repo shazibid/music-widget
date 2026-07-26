@@ -20,15 +20,17 @@ struct PillView: View {
         HStack(spacing: 12) {
             artwork
             VStack(alignment: .leading, spacing: 2) {
-                MarqueeText(text: title, font: .system(size: 13, weight: .semibold))
-                MarqueeText(text: subtitle, font: .system(size: 11), color: .secondary)
+                MarqueeText(text: viewModel.nowPlayingTitle, font: .system(size: 13, weight: .semibold))
+                    .accessibilityIdentifier(AccessibilityID.nowPlayingTitle)
+                MarqueeText(text: viewModel.nowPlayingSubtitle, font: .system(size: 11), color: .secondary)
+                    .accessibilityIdentifier(AccessibilityID.nowPlayingSubtitle)
             }
             if showsProgressBar {
                 progressGroup
             } else {
                 Spacer(minLength: 8)
             }
-            controls
+            PlaybackControlButtons(viewModel: viewModel, fontSize: 16)
         }
         .padding(12)
         .frame(height: 68)
@@ -40,6 +42,8 @@ struct PillView: View {
                 }
             }
         )
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(AccessibilityID.pillRoot)
     }
 
     private var progressGroup: some View {
@@ -81,16 +85,6 @@ struct PillView: View {
         return String(format: "%d:%02d", total / 60, total % 60)
     }
 
-    private var title: String {
-        if !viewModel.isSourceRunning { return "Nothing playing" }
-        return viewModel.track?.name ?? "Nothing playing"
-    }
-
-    private var subtitle: String {
-        if !viewModel.isSourceRunning { return "Open Spotify or Music to get started" }
-        return viewModel.track?.artist ?? " "
-    }
-
     private var artwork: some View {
         Group {
             if let image = viewModel.artworkImage {
@@ -104,22 +98,5 @@ struct PillView: View {
         }
         .frame(width: 44, height: 44)
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-    }
-
-    private var controls: some View {
-        HStack(spacing: 14) {
-            Button(action: viewModel.skipPrevious) {
-                Image(systemName: "backward.fill")
-            }
-            Button(action: viewModel.togglePlayPause) {
-                Image(systemName: viewModel.state == .playing ? "pause.fill" : "play.fill")
-            }
-            Button(action: viewModel.skipNext) {
-                Image(systemName: "forward.fill")
-            }
-        }
-        .buttonStyle(.plain)
-        .font(.system(size: 16, weight: .medium))
-        .disabled(!viewModel.isSourceRunning)
     }
 }

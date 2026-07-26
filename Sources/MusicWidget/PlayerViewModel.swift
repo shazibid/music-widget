@@ -24,7 +24,31 @@ final class PlayerViewModel: ObservableObject {
 
     var duration: TimeInterval { track?.duration ?? 0 }
 
-    private nonisolated static let controllers: [MediaAppController.Type] = [SpotifyController.self, AppleMusicController.self]
+    /// Shared "Nothing playing" fallback text for skins with room for the
+    /// full copy (Pill, CD, Vinyl). IPodView's screen is tighter and uses its
+    /// own shorter strings instead.
+    var nowPlayingTitle: String {
+        guard isSourceRunning else { return "Nothing playing" }
+        return track?.name ?? "Nothing playing"
+    }
+
+    var nowPlayingSubtitle: String {
+        guard isSourceRunning else { return "Open Spotify or Music to get started" }
+        return track?.artist ?? " "
+    }
+
+    private nonisolated(unsafe) static var controllers: [MediaAppController.Type] = [SpotifyController.self, AppleMusicController.self]
+
+    #if DEBUG
+    /// Test-only seam: swaps in fake controller(s) so unit tests and the
+    /// XCUITest smoke suite (via `MUSICWIDGET_UI_TEST=1`, see `main.swift`)
+    /// can drive deterministic playback state without a real Spotify/Music
+    /// session. Only reachable in debug builds — never compiled into the
+    /// release binary `Packaging/build-app.sh` produces.
+    static func useControllers(_ overrides: [MediaAppController.Type]) {
+        controllers = overrides
+    }
+    #endif
 
     private var timer: Timer?
     private var activeController: MediaAppController.Type?
@@ -82,7 +106,6 @@ final class PlayerViewModel: ObservableObject {
     /// otherwise goes stale the moment playback advances or the user skips.
     func fetchQueue() {
         guard let controller = activeController, controller.supportsQueue else {
-            print("fetchQueue skipped: activeController=\(String(describing: activeController)) supportsQueue=\(String(describing: activeController?.supportsQueue))")
             queue = []
             isQueueOnOtherDevice = false
             return

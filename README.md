@@ -28,9 +28,9 @@ click-wheel iPod, or a spinning vinyl record.
   connecting your Spotify account (see below) to pull the queue from
   Spotify's Web API instead.
 - **Floating, borderless, movable window** — always on top, draggable from
-  anywhere on its background, remembers nothing between launches except your
-  chosen skin (position resets to the top-right corner of the main screen
-  each launch).
+  anywhere on its background. Remembers your chosen skin, window position,
+  and (for the resizable Glass Pill) its width across launches; a fresh
+  install falls back to the top-right corner of the main screen.
 
 ## Requirements
 
@@ -178,8 +178,8 @@ via the Spotify Web API:
   browser to Spotify's login/consent page (Authorization Code + PKCE, so no
   client secret is involved) and starts a short-lived local server on
   `127.0.0.1:8888` to catch the redirect.
-- Approve access, and the widget stores a refresh token in the macOS
-  Keychain (see `SpotifyKeychainStore`) so you don't have to log in again.
+- Approve access, and the widget stores a refresh token locally (see
+  `SpotifyTokenStore`) so you don't have to log in again.
 - **Disconnect Spotify Account** (same menu) revokes the local session and
   clears the stored token.
 
@@ -229,6 +229,43 @@ music is actively playing.
 - **Queue (iPod only)** — press the top of the click wheel to flip the
   screen to "Up Next". Press again to go back to now-playing.
 
+## Testing
+
+- **Unit tests** (`Tests/MusicWidgetTests`, plain XCTest via SwiftPM) cover
+  the parts that don't need a live Spotify/Music session: `PlayerViewModel`'s
+  active-source selection, skin/window persistence, AppleScript-result
+  parsing, PKCE crypto, the OAuth loopback server's request parsing, and
+  Spotify token storage. Run them with:
+
+  ```bash
+  swift test --filter MusicWidgetTests
+  ```
+
+- **E2E UI tests** (`MusicWidgetUITests.xcodeproj`, a real XCUITest UI
+  Testing Bundle — `XCUIApplication` can't run inside a plain `swift test`
+  bundle at all) drive the actual built app: skin switching, playback
+  controls, and the now-playing labels. They run against a **debug** build
+  launched with `MUSICWIDGET_UI_TEST=1`, which swaps in a deterministic fake
+  media-app controller (`FakeMediaAppController`, `#if DEBUG`-only — never
+  compiled into the release build people actually download) so there's a
+  track to assert on without Spotify or Music installed. Run them with:
+
+  ```bash
+  ./Packaging/build-app.sh --debug   # produces dist/MusicWidget-Debug.app
+  xcodebuild test -project MusicWidgetUITests.xcodeproj -scheme MusicWidgetUITests -destination 'platform=macOS'
+  ```
+
+  The first time you run these on a given Mac, macOS will need to grant
+  Accessibility permission (System Settings → Privacy & Security →
+  Accessibility) to whatever process is driving the UI — approve the
+  prompt and re-run.
+
+- **CI** (`.github/workflows/ci.yml`) runs the unit tests on every push/PR
+  as the actual merge gate. It also runs the E2E suite, but that job is
+  advisory (`continue-on-error`) rather than blocking — GitHub's hosted
+  runners are fresh, ephemeral VMs, and it's unverified whether the
+  Accessibility permission XCUITest needs is available there out of the box.
+
 ## How it works
 
 - `PlayerViewModel` polls every second on a background task, asking each
@@ -248,7 +285,8 @@ music is actively playing.
   fetched separately via the Spotify Web API instead. `SpotifyAuthManager`
   runs an Authorization Code + PKCE login (browser consent + a short-lived
   loopback HTTP server to catch the redirect), storing only a refresh token
-  in the Keychain via `SpotifyKeychainStore`. `SpotifyWebAPI` exchanges that
+  on disk via `SpotifyTokenStore` (a permissions-locked file rather than the
+  system Keychain — see that file for why). `SpotifyWebAPI` exchanges that
   for an access token on demand and hits the `/me/player/queue` endpoint,
   discarding the result if the API's notion of "currently playing" doesn't
   match what this Mac's local Spotify client is reporting (i.e. some other
@@ -263,24 +301,33 @@ Sources/MusicWidget/
 ├── MediaAppController.swift   # Shared protocol + Track/QueueTrack/PlayerState/QueueFetchResult models
 ├── SpotifyController.swift    # Spotify AppleScript bridge
 ├── AppleMusicController.swift # Music.app AppleScript bridge
-├── WidgetSkin.swift           # Skin enum + persisted skin selection (SkinStore)
+├── WidgetSkin.swift           # Skin enum + persisted skin/position/pill-width (SkinStore)
 ├── RootView.swift             # Skin switcher + right-click context menu (incl. Spotify connect/disconnect)
 ├── PillView.swift             # Glass Pill skin
 ├── RotatingCDView.swift       # Rotating CD skin
 ├── VinylView.swift            # Vinyl Record skin
+├── SpinningDiscSkin.swift     # Shared chrome (rotation, labels, controls) for CD + Vinyl
 ├── IPodView.swift             # Click-wheel iPod skin (now-playing + queue screens)
+├── PlaybackControlButtons.swift # Shared skip/play-pause/skip row (Pill, CD, Vinyl)
 ├── MarqueeText.swift          # Auto-scrolling text for long titles
+├── AccessibilityID.swift      # Identifier constants for the E2E UI test suite
+├── Testing/
+│   └── FakeMediaAppController.swift   # #if DEBUG fake player, drives unit + E2E tests
 ├── Spotify/
 │   ├── SpotifyAuthConfig.swift        # Client ID, redirect URI/port, OAuth scopes
 │   ├── SpotifyAuthManager.swift       # PKCE login/refresh, in-memory access token
-│   ├── SpotifyKeychainStore.swift     # Refresh token persistence (Keychain)
+│   ├── SpotifyTokenStore.swift        # Refresh token persistence (permissions-locked file)
 │   ├── LoopbackCallbackServer.swift   # Local HTTP server that catches the OAuth redirect
 │   └── SpotifyWebAPI.swift            # `/me/player/queue` fetch + active-device matching
 └── Resources/
     └── ipod-body.png          # Device artwork used by the iPod skin
 
+Tests/
+├── MusicWidgetTests/          # Unit tests (SwiftPM test target, `swift test`)
+└── MusicWidgetUITests/        # E2E source, built/run via MusicWidgetUITests.xcodeproj
+
 Packaging/
-├── build-app.sh                # Assembles dist/MusicWidget.app from a release build
+├── build-app.sh                # Assembles dist/MusicWidget(-Debug).app (see --debug)
 ├── Info.plist                  # App bundle metadata (bundle ID, version, permission strings)
 └── AppIcon.icns                # App icon (placeholder — see Known limitations)
 ```
@@ -296,8 +343,6 @@ Packaging/
 - **Spotify queue reflects the active Spotify Connect device**, not
   necessarily this Mac — if another device last touched playback, the queue
   is suppressed rather than shown for the wrong session.
-- Position is not persisted between launches — only the selected skin is
-  (via `UserDefaults`).
 - No Apple Music API integration — Apple Music support is local AppleScript
   only, so it only reflects the Music.app instance actually running on your
   Mac.

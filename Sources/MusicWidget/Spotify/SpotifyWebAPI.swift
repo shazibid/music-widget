@@ -33,13 +33,15 @@ enum SpotifyWebAPI {
         return .tracks(decoded.queue.map { QueueTrack(name: $0.name, artist: $0.artists?.first?.name ?? "") })
     }
 
-    private static func matches(_ item: Item?, _ track: Track?) -> Bool {
+    /// Internal (not `private`) so `@testable import` can exercise the
+    /// active-device-matching logic directly, without a live network call.
+    static func matches(_ item: Item?, _ track: Track?) -> Bool {
         guard let track else { return true }
         guard let item else { return false }
         return item.name == track.name && (item.artists?.first?.name ?? "") == track.artist
     }
 
-    private struct QueueResponse: Decodable {
+    struct QueueResponse: Decodable {
         let queue: [Item]
         let currentlyPlaying: Item?
 
@@ -52,7 +54,7 @@ enum SpotifyWebAPI {
     /// `artists` is optional because the queue can also hold podcast
     /// episodes, which use a `show` object instead — those just surface with
     /// a blank artist rather than failing the whole decode.
-    private struct Item: Decodable {
+    struct Item: Decodable {
         let name: String
         let artists: [Artist]?
 

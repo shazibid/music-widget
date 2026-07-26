@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  unit-tests:
+    # Tracks GitHub's newest hosted macOS image. This repo targets
+    # .macOS(.v26)/Swift 6.2 (Package.swift); if macos-latest isn't on a
+    # matching Xcode version yet, this build step fails loudly — pin a
+    # specific runner image (e.g. macos-26) or move to a self-hosted
+    # runner at that point.
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: swift build
+      - name: Run unit tests
+        run: swift test --filter MusicWidgetTests
+
+  e2e-smoke:
+    runs-on: macos-latest
+    needs: unit-tests
+    # Advisory only, not a merge gate: XCUITest's Accessibility-API driving
+    # needs the Accessibility permission (System Settings > Privacy &
+    # Security > Accessibility) granted to whatever process runs the tests.
+    # GitHub's hosted runners are fresh, ephemeral VMs, so it's unverified
+    # whether that permission is already granted for this kind of
+    # automation — if this job fails or hangs on a permission prompt,
+    # that's the likely cause. unit-tests is the real gate.
+    continue-on-error: true
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build debug app bundle (includes the #if DEBUG fake-player harness)
+        run: ./Packaging/build-app.sh --debug
+      - name: Run E2E smoke suite
+        run: >
+          xcodebuild test
+          -project MusicWidgetUITests.xcodeproj
+          -scheme MusicWidgetUITests
+          -destination 'platform=macOS'

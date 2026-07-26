@@ -9,16 +9,33 @@ import Foundation
 /// on every `swift build` — untenable for a repo other people clone and
 /// build themselves.
 enum SpotifyTokenStore {
-    private static let fileURL: URL = {
-        let supportDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+    #if DEBUG
+    /// Test-only seam: redirects storage to an isolated temp directory so
+    /// tests don't read/write the real app's Application Support token
+    /// file. Only reachable in debug builds.
+    nonisolated(unsafe) static var directoryOverride: URL?
+    #endif
+
+    private static var fileURL: URL {
+        let supportDir: URL
+        #if DEBUG
+        if let directoryOverride {
+            supportDir = directoryOverride
+        } else {
+            supportDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+                .appendingPathComponent("MusicWidget", isDirectory: true)
+        }
+        #else
+        supportDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("MusicWidget", isDirectory: true)
+        #endif
         try? FileManager.default.createDirectory(
             at: supportDir,
             withIntermediateDirectories: true,
             attributes: [.posixPermissions: 0o700]
         )
         return supportDir.appendingPathComponent("spotify-refresh-token")
-    }()
+    }
 
     static func save(refreshToken: String) {
         FileManager.default.createFile(

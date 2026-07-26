@@ -19,8 +19,14 @@ enum SpotifyController: MediaAppController {
             return (name of current track) & "\u{241F}" & (artist of current track) & "\u{241F}" & (album of current track) & "\u{241F}" & (artwork url of current track) & "\u{241F}" & (duration of current track)
         end tell
         """
-        guard let result = runAppleScript(script), !result.isEmpty else { return nil }
-        let parts = result.components(separatedBy: "\u{241F}")
+        return parseTrackFields(runAppleScript(script))
+    }
+
+    /// Splits the `\u{241F}`-delimited AppleScript result into a `Track`.
+    /// Pure and testable without `NSAppleScript` or a running Spotify.
+    static func parseTrackFields(_ raw: String?) -> Track? {
+        guard let raw, !raw.isEmpty else { return nil }
+        let parts = raw.components(separatedBy: "\u{241F}")
         guard parts.count == 5 else { return nil }
         // Unlike Music, Spotify reports `duration of current track` in milliseconds.
         let duration = (Double(parts[4]) ?? 0) / 1000
@@ -61,17 +67,5 @@ enum SpotifyController: MediaAppController {
             print("Spotify fetchQueue failed: \(error)")
             return .tracks([])
         }
-    }
-
-    @discardableResult
-    private static func runAppleScript(_ source: String) -> String? {
-        var error: NSDictionary?
-        guard let script = NSAppleScript(source: source) else { return nil }
-        let output = script.executeAndReturnError(&error)
-        if let error {
-            print("AppleScript error: \(error)")
-            return nil
-        }
-        return output.stringValue
     }
 }

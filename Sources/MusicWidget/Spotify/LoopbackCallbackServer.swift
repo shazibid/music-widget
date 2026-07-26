@@ -126,10 +126,7 @@ enum LoopbackCallbackServer {
                 completion(.failure(error))
                 return
             }
-            guard let data, let requestString = String(data: data, encoding: .utf8),
-                  let requestLine = requestString.split(separator: "\r\n").first,
-                  let path = requestLine.split(separator: " ").dropFirst().first,
-                  let components = URLComponents(string: "http://127.0.0.1\(path)") else {
+            guard let data, let components = parseRequest(data) else {
                 completion(.failure(ServerError.invalidRequest))
                 connection.cancel()
                 return
@@ -141,6 +138,18 @@ enum LoopbackCallbackServer {
             })
             completion(.success(components))
         }
+    }
+
+    /// Pulls the request path out of a raw HTTP request's first line (e.g.
+    /// `GET /callback?code=...&state=... HTTP/1.1`) and resolves it against
+    /// the loopback origin. Pure and testable without a real `NWConnection`.
+    static func parseRequest(_ data: Data) -> URLComponents? {
+        guard let requestString = String(data: data, encoding: .utf8),
+              let requestLine = requestString.split(separator: "\r\n").first,
+              let path = requestLine.split(separator: " ").dropFirst().first else {
+            return nil
+        }
+        return URLComponents(string: "http://127.0.0.1\(path)")
     }
 }
 

@@ -1,6 +1,10 @@
 .build/
 .swiftpm/
 *.xcodeproj
+# Exception: this one is checked in on purpose — it exists solely to host
+# the MusicWidgetUITests XCUITest target, which `swift test` can't run at
+# all (see Tests/MusicWidgetUITests/MusicWidgetUITests.swift for why).
+!MusicWidgetUITests.xcodeproj
 DerivedData/
 .DS_Store
 dist/
