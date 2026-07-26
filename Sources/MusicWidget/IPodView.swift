@@ -8,6 +8,7 @@ struct IPodView: View {
     @ObservedObject var viewModel: PlayerViewModel
 
     @State private var showingQueue = false
+    @StateObject private var marqueeSync = MarqueeSync()
 
     private let bodyWidth: CGFloat = 210
     private let bodyHeight: CGFloat = 210 * (486.0 / 295.0)
@@ -159,14 +160,9 @@ struct IPodView: View {
                     Spacer()
                     HStack {
                         VStack(alignment: .leading, spacing: 1) {
-                            Text(title)
-                                .font(.system(size: 11, weight: .semibold))
-                                .lineLimit(1)
+                            MarqueeText(text: title, font: .system(size: 11, weight: .semibold), color: .white, sync: marqueeSync)
                                 .accessibilityIdentifier(AccessibilityID.nowPlayingTitle)
-                            Text(subtitle)
-                                .font(.system(size: 9))
-                                .foregroundStyle(.white.opacity(0.8))
-                                .lineLimit(1)
+                            MarqueeText(text: subtitle, font: .system(size: 9), color: .white.opacity(0.8), sync: marqueeSync)
                                 .accessibilityIdentifier(AccessibilityID.nowPlayingSubtitle)
                         }
                         Spacer(minLength: 4)
@@ -175,7 +171,6 @@ struct IPodView: View {
                     .padding(.vertical, 6)
                     .background(LinearGradient(colors: [.clear, .black.opacity(0.8)], startPoint: .top, endPoint: .bottom))
                 }
-                .foregroundStyle(.white)
             }
         }
     }
