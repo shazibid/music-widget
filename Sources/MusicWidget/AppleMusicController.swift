@@ -16,14 +16,16 @@ enum AppleMusicController: MediaAppController {
         let script = """
         tell application "Music"
             if player state is stopped then return ""
-            return (name of current track) & "\u{241F}" & (artist of current track) & "\u{241F}" & (album of current track)
+            return (name of current track) & "\u{241F}" & (artist of current track) & "\u{241F}" & (album of current track) & "\u{241F}" & (duration of current track)
         end tell
         """
         guard let result = runAppleScript(script), !result.isEmpty else { return nil }
         let parts = result.components(separatedBy: "\u{241F}")
-        guard parts.count == 3 else { return nil }
+        guard parts.count == 4 else { return nil }
         let artwork = fetchArtwork().map(ArtworkSource.data)
-        return Track(name: parts[0], artist: parts[1], album: parts[2], artwork: artwork)
+        // Music reports `duration of current track` in seconds already.
+        let duration = Double(parts[3]) ?? 0
+        return Track(name: parts[0], artist: parts[1], album: parts[2], artwork: artwork, duration: duration)
     }
 
     static func playerState() -> PlayerState {
@@ -31,6 +33,13 @@ enum AppleMusicController: MediaAppController {
             return .stopped
         }
         return PlayerState(rawValue: result) ?? .stopped
+    }
+
+    static func playbackPosition() -> TimeInterval {
+        guard isRunning(), let result = runAppleScript(#"tell application "Music" to player position as string"#) else {
+            return 0
+        }
+        return Double(result) ?? 0
     }
 
     static func playPause() {

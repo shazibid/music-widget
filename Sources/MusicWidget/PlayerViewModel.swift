@@ -6,6 +6,8 @@ import Foundation
 final class PlayerViewModel: ObservableObject {
     @Published private(set) var track: Track?
     @Published private(set) var state: PlayerState = .stopped
+    /// Elapsed seconds into `track`, refreshed on the same poll cycle.
+    @Published private(set) var elapsed: TimeInterval = 0
     @Published private(set) var artworkImage: NSImage?
     @Published private(set) var isSourceRunning = false
     @Published private(set) var queue: [QueueTrack] = []
@@ -19,6 +21,8 @@ final class PlayerViewModel: ObservableObject {
     /// `MediaAppController.supportsQueue`) — false for Spotify until the user
     /// connects their account.
     var queueSupported: Bool { activeController?.supportsQueue ?? false }
+
+    var duration: TimeInterval { track?.duration ?? 0 }
 
     private nonisolated static let controllers: [MediaAppController.Type] = [SpotifyController.self, AppleMusicController.self]
 
@@ -156,15 +160,15 @@ final class PlayerViewModel: ObservableObject {
     /// Prefers whichever app is actively playing; if both are just open and
     /// paused, falls back to the first one (in `controllers` order). Nothing
     /// running means nothing to show.
-    private nonisolated static func poll() -> (controller: MediaAppController.Type?, state: PlayerState, track: Track?) {
+    private nonisolated static func poll() -> (controller: MediaAppController.Type?, state: PlayerState, track: Track?, elapsed: TimeInterval) {
         let running = controllers.filter { $0.isRunning() }
-        guard !running.isEmpty else { return (nil, .stopped, nil) }
+        guard !running.isEmpty else { return (nil, .stopped, nil, 0) }
         let states = running.map { (app: $0, state: $0.playerState()) }
         let chosen = states.first(where: { $0.state == .playing }) ?? states[0]
-        return (chosen.app, chosen.state, chosen.app.currentTrack())
+        return (chosen.app, chosen.state, chosen.app.currentTrack(), chosen.app.playbackPosition())
     }
 
-    private func apply(_ snapshot: (controller: MediaAppController.Type?, state: PlayerState, track: Track?)) {
+    private func apply(_ snapshot: (controller: MediaAppController.Type?, state: PlayerState, track: Track?, elapsed: TimeInterval)) {
         isSourceRunning = snapshot.controller != nil
         if activeController != nil, snapshot.controller == nil {
             queue = []
@@ -173,6 +177,7 @@ final class PlayerViewModel: ObservableObject {
         activeController = snapshot.controller
         state = snapshot.state
         track = snapshot.track
+        elapsed = snapshot.elapsed
         loadArtworkIfNeeded()
         refreshQueueIfTrackChanged()
     }

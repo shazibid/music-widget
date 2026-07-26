@@ -31,6 +31,27 @@ enum WidgetSkin: String, CaseIterable, Identifiable {
         }
     }
 
+    /// Only the pill supports interactive resizing right now, and only
+    /// along its width — like Spotify's mini player, the bar stretches
+    /// while everything inside (fonts, artwork, controls) stays the same
+    /// size and simply repositions toward the edges.
+    var isWidthResizable: Bool { self == .pill }
+
+    /// Matches each skin's `glassEffect` corner radius. Masking the window's
+    /// content view to this shape keeps system-drawn chrome (e.g. the glass
+    /// material's key-window highlight) from bleeding past the rounded card
+    /// onto the window's true rectangular edge.
+    var cornerRadius: CGFloat {
+        switch self {
+        case .pill: 20
+        case .cd, .vinyl: 28
+        case .ipod: 0
+        }
+    }
+
+    static let pillMinWidth: CGFloat = 260
+    static let pillMaxWidth: CGFloat = 640
+
     /// Shared with the AppKit-side window resize so the frame and the
     /// SwiftUI content transition move together instead of drifting apart.
     static let transitionDuration: TimeInterval = 0.32
@@ -43,9 +64,23 @@ final class SkinStore: ObservableObject {
     }
 
     private static let defaultsKey = "selectedSkin"
+    private static let pillWidthDefaultsKey = "pillWidth"
 
     init() {
         let saved = UserDefaults.standard.string(forKey: Self.defaultsKey).flatMap(WidgetSkin.init(rawValue:))
         skin = saved ?? .pill
+    }
+
+    /// The user's last hand-dragged pill width, remembered across launches
+    /// and skin switches. Defaults to the pill's original design width.
+    var pillWidth: CGFloat {
+        get {
+            let stored = UserDefaults.standard.double(forKey: Self.pillWidthDefaultsKey)
+            let width = stored > 0 ? CGFloat(stored) : WidgetSkin.pill.windowSize.width
+            return min(max(width, WidgetSkin.pillMinWidth), WidgetSkin.pillMaxWidth)
+        }
+        set {
+            UserDefaults.standard.set(Double(newValue), forKey: Self.pillWidthDefaultsKey)
+        }
     }
 }

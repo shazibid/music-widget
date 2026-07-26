@@ -29,12 +29,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             rootView: RootView(viewModel: viewModel, skinStore: skinStore, onMinimize: { [weak self] in self?.minimizeToDock() })
         )
 
-        let initialSize = skinStore.skin.windowSize
+        let initialSize = size(for: skinStore.skin)
         let window = FloatingWidgetWindow(
             contentRect: NSRect(x: 0, y: 0, width: initialSize.width, height: initialSize.height),
             // `.miniaturizable` has no visual effect without `.titled` (no
             // title bar appears) but is required for `miniaturize(_:)` to
             // work — without it the window just refuses to minimize.
+            // `.resizable` is added/removed per-skin in `configureResizability`.
             styleMask: [.borderless, .fullSizeContentView, .miniaturizable],
             backing: .buffered,
             defer: false
@@ -47,6 +48,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
         window.isMovableByWindowBackground = true
         window.isReleasedWhenClosed = false
+        window.delegate = self
+        configureResizability(of: window, for: skinStore.skin)
+        applyCornerMask(to: hosting, for: skinStore.skin)
 
         if let screen = NSScreen.main {
             let visible = screen.visibleFrame
@@ -78,14 +82,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func resizeWindow(for skin: WidgetSkin) {
         guard let window else { return }
-        let newSize = skin.windowSize
-        let topRight = NSPoint(x: window.frame.maxX, y: window.frame.maxY)
-        let newFrame = NSRect(
-            x: topRight.x - newSize.width,
-            y: topRight.y - newSize.height,
+        configureResizability(of: window, for: skin)
+        if let contentView = window.contentView {
+            applyCornerMask(to: contentView, for: skin)
+        }
+        let newSize = size(for: skin)
+        // Anchor on the old frame's center, not a corner, so switching to a
+        // much taller/narrower skin grows or shrinks symmetrically instead
+        // of appearing to leap toward one edge.
+        let center = NSPoint(x: window.frame.midX, y: window.frame.midY)
+        var newFrame = NSRect(
+            x: center.x - newSize.width / 2,
+            y: center.y - newSize.height / 2,
             width: newSize.width,
             height: newSize.height
         )
+        // Clamp to the screen the window is actually on so a big size swing
+        // (e.g. pill's 68pt height to vinyl/CD's 300pt) can't push any edge
+        // past the visible screen bounds.
+        if let visible = (window.screen ?? NSScreen.main)?.visibleFrame {
+            newFrame.origin.x = min(max(newFrame.origin.x, visible.minX), visible.maxX - newFrame.width)
+            newFrame.origin.y = min(max(newFrame.origin.y, visible.minY), visible.maxY - newFrame.height)
+        }
         // Matches the SwiftUI content's transition duration/easing (see
         // RootView) so the frame and the widget inside it move as one.
         NSAnimationContext.runAnimationGroup { context in
@@ -93,6 +111,47 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
             window.animator().setFrame(newFrame, display: true)
         }
+    }
+
+    /// A skin's window size, substituting the user's last hand-dragged
+    /// width for the pill (height never changes — see `isWidthResizable`).
+    private func size(for skin: WidgetSkin) -> NSSize {
+        guard skin.isWidthResizable else { return skin.windowSize }
+        return NSSize(width: skinStore.pillWidth, height: skin.windowSize.height)
+    }
+
+    /// `minSize`/`maxSize` sharing one height is what pins the height while
+    /// leaving width free — AppKit clamps any drag's height component to
+    /// that single value no matter which edge/corner the user grabs, so no
+    /// `windowWillResize` override is needed.
+    private func configureResizability(of window: NSWindow, for skin: WidgetSkin) {
+        guard skin.isWidthResizable else {
+            window.styleMask.remove(.resizable)
+            return
+        }
+        window.styleMask.insert(.resizable)
+        let height = skin.windowSize.height
+        window.minSize = NSSize(width: WidgetSkin.pillMinWidth, height: height)
+        window.maxSize = NSSize(width: WidgetSkin.pillMaxWidth, height: height)
+    }
+
+    /// Clips the window's content to each skin's card shape, so system-drawn
+    /// chrome (e.g. the glass material's key-window highlight) can't bleed
+    /// past the rounded corners onto the window's true rectangular edge.
+    private func applyCornerMask(to contentView: NSView, for skin: WidgetSkin) {
+        contentView.wantsLayer = true
+        contentView.layer?.cornerRadius = skin.cornerRadius
+        contentView.layer?.masksToBounds = skin.cornerRadius > 0
+    }
+}
+
+extension AppDelegate: NSWindowDelegate {
+    /// Fires only for a user-driven drag (not the programmatic `setFrame`
+    /// animation in `resizeWindow`), so this is where — and only where —
+    /// the chosen width gets remembered for next launch/skin switch.
+    func windowDidEndLiveResize(_ notification: Notification) {
+        guard let window, skinStore.skin.isWidthResizable else { return }
+        skinStore.pillWidth = window.frame.width
     }
 }
 

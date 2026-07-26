@@ -12,6 +12,7 @@ struct Track: Equatable {
     let artist: String
     let album: String
     let artwork: ArtworkSource?
+    let duration: TimeInterval
 }
 
 struct QueueTrack: Equatable, Identifiable {
@@ -49,6 +50,9 @@ protocol MediaAppController {
     static func isRunning() -> Bool
     static func currentTrack() -> Track?
     static func playerState() -> PlayerState
+    /// Elapsed seconds into the current track. Polled alongside `currentTrack()`
+    /// to drive the pill's progress bar.
+    static func playbackPosition() -> TimeInterval
     static func playPause()
     static func next()
     static func previous()

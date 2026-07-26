@@ -16,13 +16,15 @@ enum SpotifyController: MediaAppController {
         let script = """
         tell application "Spotify"
             if player state is stopped then return ""
-            return (name of current track) & "\u{241F}" & (artist of current track) & "\u{241F}" & (album of current track) & "\u{241F}" & (artwork url of current track)
+            return (name of current track) & "\u{241F}" & (artist of current track) & "\u{241F}" & (album of current track) & "\u{241F}" & (artwork url of current track) & "\u{241F}" & (duration of current track)
         end tell
         """
         guard let result = runAppleScript(script), !result.isEmpty else { return nil }
         let parts = result.components(separatedBy: "\u{241F}")
-        guard parts.count == 4 else { return nil }
-        return Track(name: parts[0], artist: parts[1], album: parts[2], artwork: .url(parts[3]))
+        guard parts.count == 5 else { return nil }
+        // Unlike Music, Spotify reports `duration of current track` in milliseconds.
+        let duration = (Double(parts[4]) ?? 0) / 1000
+        return Track(name: parts[0], artist: parts[1], album: parts[2], artwork: .url(parts[3]), duration: duration)
     }
 
     static func playerState() -> PlayerState {
@@ -30,6 +32,13 @@ enum SpotifyController: MediaAppController {
             return .stopped
         }
         return PlayerState(rawValue: result) ?? .stopped
+    }
+
+    static func playbackPosition() -> TimeInterval {
+        guard isRunning(), let result = runAppleScript(#"tell application "Spotify" to player position as string"#) else {
+            return 0
+        }
+        return Double(result) ?? 0
     }
 
     static func playPause() {

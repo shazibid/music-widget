@@ -14,7 +14,13 @@ struct RootView: View {
             case .ipod: IPodView(viewModel: viewModel)
             }
         }
-        .transition(.scale(scale: 0.9).combined(with: .opacity))
+        // No fade/scale here on purpose: each skin view already renders at
+        // its own fixed size (see WidgetSkin.windowSize), and the window
+        // frame animates separately in AppDelegate.resizeWindow. Leaving
+        // this as `.identity` means the *only* motion you see is that
+        // frame animating — the new skin's content is simply revealed or
+        // clipped as the border grows/shrinks to meet it.
+        .transition(.identity)
         .contentShape(Rectangle())
         .contextMenu {
             ForEach(WidgetSkin.allCases) { option in
