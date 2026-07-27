@@ -1,7 +1,7 @@
 import Foundation
 
 /// Accessibility identifiers shared between the app's views and the
-/// XCUITest smoke suite (`Tests/MusicWidgetUITests`), so both sides
+/// XCUITest smoke suite (`Tests/MiniplayerUITests`), so both sides
 /// reference the same string constants instead of duplicating literals.
 enum AccessibilityID {
     static let nowPlayingTitle = "nowPlayingTitle"

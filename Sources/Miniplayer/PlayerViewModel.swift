@@ -41,7 +41,7 @@ final class PlayerViewModel: ObservableObject {
 
     #if DEBUG
     /// Test-only seam: swaps in fake controller(s) so unit tests and the
-    /// XCUITest smoke suite (via `MUSICWIDGET_UI_TEST=1`, see `main.swift`)
+    /// XCUITest smoke suite (via `MINIPLAYER_UI_TEST=1`, see `main.swift`)
     /// can drive deterministic playback state without a real Spotify/Music
     /// session. Only reachable in debug builds — never compiled into the
     /// release binary `Packaging/build-app.sh` produces.

@@ -1,5 +1,5 @@
 import XCTest
-@testable import MusicWidget
+@testable import Miniplayer
 
 final class SpotifyWebAPITests: XCTestCase {
     private let track = Track(name: "Song Title", artist: "Some Artist", album: "Some Album", artwork: nil, duration: 200)

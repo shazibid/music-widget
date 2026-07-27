@@ -23,11 +23,11 @@ enum SpotifyTokenStore {
             supportDir = directoryOverride
         } else {
             supportDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-                .appendingPathComponent("MusicWidget", isDirectory: true)
+                .appendingPathComponent("Miniplayer", isDirectory: true)
         }
         #else
         supportDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("MusicWidget", isDirectory: true)
+            .appendingPathComponent("Miniplayer", isDirectory: true)
         #endif
         try? FileManager.default.createDirectory(
             at: supportDir,

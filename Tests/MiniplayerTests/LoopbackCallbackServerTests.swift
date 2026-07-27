@@ -1,5 +1,5 @@
 import XCTest
-@testable import MusicWidget
+@testable import Miniplayer
 
 final class LoopbackCallbackServerTests: XCTestCase {
     private func rawRequest(_ requestLine: String) -> Data {

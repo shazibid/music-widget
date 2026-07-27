@@ -3,7 +3,7 @@ import Foundation
 
 /// Deterministic stand-in for Spotify/Music.app. Used two ways:
 /// - Directly by unit tests, configured via its mutable static fields.
-/// - By the shipped debug binary when launched with `MUSICWIDGET_UI_TEST=1`
+/// - By the shipped debug binary when launched with `MINIPLAYER_UI_TEST=1`
 ///   (see `main.swift`), so the XCUITest smoke suite can exercise real UI
 ///   states without a live Spotify/Music session.
 ///

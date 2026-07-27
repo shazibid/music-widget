@@ -174,7 +174,7 @@ extension AppDelegate: NSWindowDelegate {
     }
 }
 
-/// `swift run MusicWidget --print-queue` — calls the same `SpotifyController.queue()`
+/// `swift run Miniplayer --print-queue` — calls the same `SpotifyController.queue()`
 /// the widget uses, prints it as plain JSON, and exits. No window, no GUI event
 /// loop, so it's safe to script/pipe and won't leave a floating widget behind.
 if CommandLine.arguments.contains("--print-queue") {
@@ -208,11 +208,11 @@ if CommandLine.arguments.contains("--print-queue") {
 }
 
 #if DEBUG
-// Lets the XCUITest smoke suite (Tests/MusicWidgetUITests) drive the real
+// Lets the XCUITest smoke suite (Tests/MiniplayerUITests) drive the real
 // UI against deterministic fake playback data instead of a live Spotify/
 // Music session. Only reachable in debug builds — release/dist builds
 // never check this env var.
-if ProcessInfo.processInfo.environment["MUSICWIDGET_UI_TEST"] == "1" {
+if ProcessInfo.processInfo.environment["MINIPLAYER_UI_TEST"] == "1" {
     PlayerViewModel.useControllers([FakeMediaAppController.self])
 }
 #endif

@@ -3,17 +3,17 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleName</key>
-	<string>MusicWidget</string>
+	<string>Miniplayer</string>
 	<key>CFBundleDisplayName</key>
-	<string>MusicWidget</string>
+	<string>Miniplayer</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.shazibid.MusicWidget</string>
+	<string>com.shazibid.Miniplayer</string>
 	<key>CFBundleVersion</key>
 	<string>1.0.0</string>
 	<key>CFBundleShortVersionString</key>
 	<string>1.0.0</string>
 	<key>CFBundleExecutable</key>
-	<string>MusicWidget</string>
+	<string>Miniplayer</string>
 	<key>CFBundleIconFile</key>
 	<string>AppIcon</string>
 	<key>CFBundlePackageType</key>
@@ -27,8 +27,8 @@
 	<key>NSHighResolutionCapable</key>
 	<true/>
 	<key>NSHumanReadableCopyright</key>
-	<string>MusicWidget is not affiliated with, endorsed by, or sponsored by Apple Inc. or Spotify AB.</string>
+	<string>Miniplayer is not affiliated with, endorsed by, or sponsored by Apple Inc. or Spotify AB.</string>
 	<key>NSAppleEventsUsageDescription</key>
-	<string>MusicWidget needs to send Apple Events to Spotify and Music to read the current track and control playback.</string>
+	<string>Miniplayer needs to send Apple Events to Spotify and Music to read the current track and control playback.</string>
 </dict>
 </plist>

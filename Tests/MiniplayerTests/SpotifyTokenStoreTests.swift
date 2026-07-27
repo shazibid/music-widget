@@ -1,5 +1,5 @@
 import XCTest
-@testable import MusicWidget
+@testable import Miniplayer
 
 final class SpotifyTokenStoreTests: XCTestCase {
     private var tempDir: URL!

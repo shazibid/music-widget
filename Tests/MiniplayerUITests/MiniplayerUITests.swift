@@ -1,13 +1,13 @@
 import XCTest
 
-/// Drives the real, built `dist/MusicWidget-Debug.app` against the
-/// fake-player harness (`MUSICWIDGET_UI_TEST=1`, see
+/// Drives the real, built `dist/Miniplayer-Debug.app` against the
+/// fake-player harness (`MINIPLAYER_UI_TEST=1`, see
 /// `main.swift`/`FakeMediaAppController`) so these tests exercise actual UI
 /// states without needing Spotify/Music installed. Must be the *debug*
 /// build specifically — the fake-player harness is `#if DEBUG`-gated and
-/// isn't compiled into the release build that `dist/MusicWidget.app` is.
+/// isn't compiled into the release build that `dist/Miniplayer.app` is.
 ///
-/// This lives in a standalone Xcode project (`MusicWidgetUITests.xcodeproj`
+/// This lives in a standalone Xcode project (`MiniplayerUITests.xcodeproj`
 /// at the repo root, "UI Testing Bundle" target with no host app) because
 /// `XCUIApplication` cannot run inside a plain SwiftPM `swift test` bundle
 /// at all — macOS refuses it outright ("Device is not configured for UI
@@ -15,7 +15,7 @@ import XCTest
 /// wrapper that only `xcodebuild test` produces.
 ///
 /// The identifier strings below intentionally duplicate
-/// `Sources/MusicWidget/AccessibilityID.swift` rather than importing it:
+/// `Sources/Miniplayer/AccessibilityID.swift` rather than importing it:
 /// linking an executable SwiftPM target's implicit product into a separate
 /// Xcode project for `@testable import` is unproven territory, and a UI
 /// test target has no real need to compile against the app's internals
@@ -27,7 +27,7 @@ import XCTest
 /// to Xcode/the UI test runner under System Settings → Privacy & Security →
 /// Accessibility — see the "Testing" section of the README.
 @MainActor
-final class MusicWidgetUITests: XCTestCase {
+final class MiniplayerUITests: XCTestCase {
     private enum ID {
         static let nowPlayingTitle = "nowPlayingTitle"
         static let nowPlayingSubtitle = "nowPlayingSubtitle"
@@ -48,7 +48,7 @@ final class MusicWidgetUITests: XCTestCase {
         }
     }
 
-    private static let debugBundleID = "com.shazibid.MusicWidget.debug"
+    private static let debugBundleID = "com.shazibid.Miniplayer.debug"
 
     private var app: XCUIApplication!
 
@@ -64,7 +64,7 @@ final class MusicWidgetUITests: XCTestCase {
 
         let appURL = try Self.builtAppURL()
         app = XCUIApplication(url: appURL)
-        app.launchEnvironment["MUSICWIDGET_UI_TEST"] = "1"
+        app.launchEnvironment["MINIPLAYER_UI_TEST"] = "1"
         app.launch()
     }
 
@@ -112,17 +112,17 @@ final class MusicWidgetUITests: XCTestCase {
         }
     }
 
-    /// Resolves `dist/MusicWidget-Debug.app`, built by
+    /// Resolves `dist/Miniplayer-Debug.app`, built by
     /// `Packaging/build-app.sh --debug`, relative to this file's location
-    /// (`Tests/MusicWidgetUITests/`, two levels below the package root).
+    /// (`Tests/MiniplayerUITests/`, two levels below the package root).
     private static func builtAppURL() throws -> URL {
         let packageRoot = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
             .deletingLastPathComponent()
             .deletingLastPathComponent()
-        let appURL = packageRoot.appendingPathComponent("dist/MusicWidget-Debug.app")
+        let appURL = packageRoot.appendingPathComponent("dist/Miniplayer-Debug.app")
         guard FileManager.default.fileExists(atPath: appURL.path) else {
-            throw XCTSkip("dist/MusicWidget-Debug.app not found — run ./Packaging/build-app.sh --debug first.")
+            throw XCTSkip("dist/Miniplayer-Debug.app not found — run ./Packaging/build-app.sh --debug first.")
         }
         return appURL
     }

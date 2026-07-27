@@ -18,7 +18,7 @@ jobs:
       - name: Build
         run: swift build
       - name: Run unit tests
-        run: swift test --filter MusicWidgetTests
+        run: swift test --filter MiniplayerTests
 
   e2e-smoke:
     runs-on: macos-latest
@@ -39,6 +39,6 @@ jobs:
       - name: Run E2E smoke suite
         run: >
           xcodebuild test
-          -project MusicWidgetUITests.xcodeproj
-          -scheme MusicWidgetUITests
+          -project MiniplayerUITests.xcodeproj
+          -scheme MiniplayerUITests
           -destination 'platform=macOS'

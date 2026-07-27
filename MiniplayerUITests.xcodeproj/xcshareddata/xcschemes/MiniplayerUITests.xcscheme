@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "1000000000000000000000A4"
-               BuildableName = "MusicWidgetUITests.xctest"
-               BlueprintName = "MusicWidgetUITests"
-               ReferencedContainer = "container:MusicWidgetUITests.xcodeproj">
+               BuildableName = "MiniplayerUITests.xctest"
+               BlueprintName = "MiniplayerUITests"
+               ReferencedContainer = "container:MiniplayerUITests.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -33,9 +33,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "1000000000000000000000A4"
-               BuildableName = "MusicWidgetUITests.xctest"
-               BlueprintName = "MusicWidgetUITests"
-               ReferencedContainer = "container:MusicWidgetUITests.xcodeproj">
+               BuildableName = "MiniplayerUITests.xctest"
+               BlueprintName = "MiniplayerUITests"
+               ReferencedContainer = "container:MiniplayerUITests.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>

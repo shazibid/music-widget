@@ -2,23 +2,23 @@
 import PackageDescription
 
 let package = Package(
-    name: "MusicWidget",
+    name: "Miniplayer",
     platforms: [.macOS(.v26)],
     targets: [
         .executableTarget(
-            name: "MusicWidget",
-            path: "Sources/MusicWidget"
+            name: "Miniplayer",
+            path: "Sources/Miniplayer"
         ),
         .testTarget(
-            name: "MusicWidgetTests",
-            dependencies: ["MusicWidget"],
-            path: "Tests/MusicWidgetTests"
+            name: "MiniplayerTests",
+            dependencies: ["Miniplayer"],
+            path: "Tests/MiniplayerTests"
         )
-        // No SwiftPM target for Tests/MusicWidgetUITests: XCUIApplication
+        // No SwiftPM target for Tests/MiniplayerUITests: XCUIApplication
         // cannot run inside a plain `swift test` bundle at all (macOS
         // refuses it — "Device is not configured for UI testing" — no
         // matter what permissions are granted). Those UI tests are built
-        // and run via MusicWidgetUITests.xcodeproj / `xcodebuild test`
+        // and run via MiniplayerUITests.xcodeproj / `xcodebuild test`
         // instead — see that project and the README's Testing section.
     ]
 )

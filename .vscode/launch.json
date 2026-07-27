@@ -5,20 +5,20 @@
             "request": "launch",
             "args": [],
             "cwd": "${workspaceFolder:music widget}",
-            "name": "Debug MusicWidget",
-            "target": "MusicWidget",
+            "name": "Debug Miniplayer",
+            "target": "Miniplayer",
             "configuration": "debug",
-            "preLaunchTask": "swift: Build Debug MusicWidget"
+            "preLaunchTask": "swift: Build Debug Miniplayer"
         },
         {
             "type": "swift",
             "request": "launch",
             "args": [],
             "cwd": "${workspaceFolder:music widget}",
-            "name": "Release MusicWidget",
-            "target": "MusicWidget",
+            "name": "Release Miniplayer",
+            "target": "Miniplayer",
             "configuration": "release",
-            "preLaunchTask": "swift: Build Release MusicWidget"
+            "preLaunchTask": "swift: Build Release Miniplayer"
         }
     ]
 }

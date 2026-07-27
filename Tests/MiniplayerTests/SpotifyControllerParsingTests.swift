@@ -1,5 +1,5 @@
 import XCTest
-@testable import MusicWidget
+@testable import Miniplayer
 
 final class SpotifyControllerParsingTests: XCTestCase {
     private let unitSeparator = "\u{241F}"

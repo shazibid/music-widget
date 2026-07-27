@@ -1,6 +1,6 @@
 import AppKit
 import XCTest
-@testable import MusicWidget
+@testable import Miniplayer
 
 @MainActor
 final class SkinStoreTests: XCTestCase {

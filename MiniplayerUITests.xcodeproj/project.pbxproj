@@ -7,12 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		1000000000000000000000B1 /* MusicWidgetUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000000000000A6 /* MusicWidgetUITests.swift */; };
+		1000000000000000000000B1 /* MiniplayerUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000000000000A6 /* MiniplayerUITests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		1000000000000000000000A5 /* MusicWidgetUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MusicWidgetUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		1000000000000000000000A6 /* MusicWidgetUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MusicWidgetUITests.swift; path = Tests/MusicWidgetUITests/MusicWidgetUITests.swift; sourceTree = "<group>"; };
+		1000000000000000000000A5 /* MiniplayerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MiniplayerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		1000000000000000000000A6 /* MiniplayerUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MiniplayerUITests.swift; path = Tests/MiniplayerUITests/MiniplayerUITests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -29,7 +29,7 @@
 		1000000000000000000000A1 /* MainGroup */ = {
 			isa = PBXGroup;
 			children = (
-				1000000000000000000000A3 /* MusicWidgetUITests */,
+				1000000000000000000000A3 /* MiniplayerUITests */,
 				1000000000000000000000A2 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -37,25 +37,25 @@
 		1000000000000000000000A2 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				1000000000000000000000A5 /* MusicWidgetUITests.xctest */,
+				1000000000000000000000A5 /* MiniplayerUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		1000000000000000000000A3 /* MusicWidgetUITests */ = {
+		1000000000000000000000A3 /* MiniplayerUITests */ = {
 			isa = PBXGroup;
 			children = (
-				1000000000000000000000A6 /* MusicWidgetUITests.swift */,
+				1000000000000000000000A6 /* MiniplayerUITests.swift */,
 			);
-			name = MusicWidgetUITests;
+			name = MiniplayerUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		1000000000000000000000A4 /* MusicWidgetUITests */ = {
+		1000000000000000000000A4 /* MiniplayerUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 1000000000000000000000AB /* Build configuration list for PBXNativeTarget "MusicWidgetUITests" */;
+			buildConfigurationList = 1000000000000000000000AB /* Build configuration list for PBXNativeTarget "MiniplayerUITests" */;
 			buildPhases = (
 				1000000000000000000000A8 /* Sources */,
 				1000000000000000000000A9 /* Frameworks */,
@@ -65,9 +65,9 @@
 			);
 			dependencies = (
 			);
-			name = MusicWidgetUITests;
-			productName = MusicWidgetUITests;
-			productReference = 1000000000000000000000A5 /* MusicWidgetUITests.xctest */;
+			name = MiniplayerUITests;
+			productName = MiniplayerUITests;
+			productReference = 1000000000000000000000A5 /* MiniplayerUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -79,7 +79,7 @@
 				BuildIndependentTargetsInParallel = 1;
 				LastUpgradeCheck = 1600;
 			};
-			buildConfigurationList = 1000000000000000000000AE /* Build configuration list for PBXProject "MusicWidgetUITests" */;
+			buildConfigurationList = 1000000000000000000000AE /* Build configuration list for PBXProject "MiniplayerUITests" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -92,7 +92,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				1000000000000000000000A4 /* MusicWidgetUITests */,
+				1000000000000000000000A4 /* MiniplayerUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -112,7 +112,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1000000000000000000000B1 /* MusicWidgetUITests.swift in Sources */,
+				1000000000000000000000B1 /* MiniplayerUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -128,7 +128,7 @@
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.musicwidget.uitests";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.miniplayer.uitests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				SWIFT_VERSION = 5.0;
@@ -144,7 +144,7 @@
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.musicwidget.uitests";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.miniplayer.uitests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				SWIFT_VERSION = 5.0;
@@ -191,7 +191,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		1000000000000000000000AB /* Build configuration list for PBXNativeTarget "MusicWidgetUITests" */ = {
+		1000000000000000000000AB /* Build configuration list for PBXNativeTarget "MiniplayerUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				1000000000000000000000AC /* Debug */,
@@ -200,7 +200,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		1000000000000000000000AE /* Build configuration list for PBXProject "MusicWidgetUITests" */ = {
+		1000000000000000000000AE /* Build configuration list for PBXProject "MiniplayerUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				1000000000000000000000AF /* Debug */,

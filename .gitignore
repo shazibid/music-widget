@@ -2,9 +2,9 @@
 .swiftpm/
 *.xcodeproj
 # Exception: this one is checked in on purpose — it exists solely to host
-# the MusicWidgetUITests XCUITest target, which `swift test` can't run at
-# all (see Tests/MusicWidgetUITests/MusicWidgetUITests.swift for why).
-!MusicWidgetUITests.xcodeproj
+# the MiniplayerUITests XCUITest target, which `swift test` can't run at
+# all (see Tests/MiniplayerUITests/MiniplayerUITests.swift for why).
+!MiniplayerUITests.xcodeproj
 DerivedData/
 .DS_Store
 dist/

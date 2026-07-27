@@ -1,5 +1,5 @@
 import XCTest
-@testable import MusicWidget
+@testable import Miniplayer
 
 /// A second fake controller, distinct from `FakeMediaAppController`, so
 /// tests can exercise `PlayerViewModel`'s multi-app selection rules (prefer

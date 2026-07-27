@@ -1,4 +1,4 @@
-# MusicWidget
+# Miniplayer
 
 A tiny always-on-top desktop widget for macOS that shows what's currently
 playing in **Spotify** or **Apple Music** and lets you control playback
@@ -66,15 +66,15 @@ install separately.
 ### 2. Get the project's code onto your Mac
 
 This project's code lives on **GitHub** at
-https://github.com/shazibid/music-widget. "Cloning" just means downloading a
+https://github.com/shazibid/miniplayer. "Cloning" just means downloading a
 copy of it. Pick whichever of these two ways feels easier:
 
 **Option A — Download as a ZIP file (simplest, no extra tools)**
 
-1. Go to https://github.com/shazibid/music-widget in your web browser.
+1. Go to https://github.com/shazibid/miniplayer in your web browser.
 2. Click the green **Code** button, then click **Download ZIP**.
 3. Open your **Downloads** folder and double-click the downloaded file to
-   unzip it. You'll end up with a folder named `music-widget-main`.
+   unzip it. You'll end up with a folder named `miniplayer-main`.
 
 **Option B — Use `git clone` (a bit more setup, easier to update later)**
 
@@ -88,9 +88,9 @@ copy of it. Pick whichever of these two ways feels easier:
    ```
 3. Type or paste the following and press Return:
    ```bash
-   git clone https://github.com/shazibid/music-widget.git
+   git clone https://github.com/shazibid/miniplayer.git
    ```
-   This downloads the code into a new folder named `music-widget` inside
+   This downloads the code into a new folder named `miniplayer` inside
    Documents. The first time you use `git`, macOS may ask to install
    "Command Line Developer Tools" — click **Install** and wait for it to
    finish, then run the command above again.
@@ -105,7 +105,7 @@ folder.
 2. Type `cd ` — that's "c", "d", then a single space — but **don't press
    Return yet**.
 3. Switch to **Finder**, find the project folder from step 2
-   (`music-widget-main` or `music-widget`), and drag that folder from Finder
+   (`miniplayer-main` or `miniplayer`), and drag that folder from Finder
    directly onto the Terminal window. This types out its full location for
    you.
 4. Click back in Terminal and press Return. Your prompt now represents
@@ -131,7 +131,7 @@ Up arrow to cycle through previous commands), then `swift run`.
 A few notes for later, once you're comfortable with the basics:
 
 - `swift build -c release` produces a faster, optimized build (the binary
-  ends up at `.build/release/MusicWidget`).
+  ends up at `.build/release/Miniplayer`).
 - You can also open the project in **Xcode** (double-click `Package.swift`
   inside the project folder) or in **VS Code** with the Swift extension — a
   debug/release launch configuration is already set up in
@@ -145,14 +145,14 @@ corner of your main screen.
 
 `swift run` is fine for trying it out, but it only lasts for that Terminal
 session and never shows up in `/Applications` or Spotlight. To get an actual
-**MusicWidget.app** you can drag into Applications and launch normally from
+**Miniplayer.app** you can drag into Applications and launch normally from
 then on:
 
 ```bash
 ./Packaging/build-app.sh
 ```
 
-This builds a release binary and assembles it into `dist/MusicWidget.app`.
+This builds a release binary and assembles it into `dist/Miniplayer.app`.
 Drag that into `/Applications` (or wherever you like) and double-click it
 like any other app.
 
@@ -161,7 +161,7 @@ a paid Apple Developer account), so the first time you open it macOS will
 warn that it's from an "unidentified developer" and refuse to launch it
 normally. To get past that once:
 
-1. **Right-click** (or Control-click) `MusicWidget.app` and choose **Open**.
+1. **Right-click** (or Control-click) `Miniplayer.app` and choose **Open**.
 2. Click **Open** again in the dialog that appears.
 
 After that first approval, it launches normally every time, including from
@@ -192,7 +192,7 @@ You can also fetch the queue from the command line without launching the
 widget's window:
 
 ```bash
-swift run MusicWidget --print-queue
+swift run Miniplayer --print-queue
 ```
 
 This requires Spotify to be running and already connected via the menu
@@ -200,9 +200,9 @@ above; it prints the queue as JSON and exits.
 
 ### 7. Grant Automation permission
 
-MusicWidget talks to Spotify and Music.app via AppleScript, so the first time
+Miniplayer talks to Spotify and Music.app via AppleScript, so the first time
 it tries to read a track or send a command, macOS will pop up a dialog
-asking to let MusicWidget control Spotify and/or Music. Click **OK** on each
+asking to let Miniplayer control Spotify and/or Music. Click **OK** on each
 one.
 
 If you miss a prompt or click **Don't Allow** by mistake, you can turn it
@@ -212,7 +212,7 @@ back on by hand:
    your screen → **System Settings…**).
 2. Click **Privacy & Security** in the sidebar.
 3. Click **Automation**.
-4. Find **MusicWidget** in the list and turn on the switches next to
+4. Find **Miniplayer** in the list and turn on the switches next to
    **Spotify** and **Music**.
 
 Without this permission the widget will show "Nothing Playing" even while
@@ -231,28 +231,28 @@ music is actively playing.
 
 ## Testing
 
-- **Unit tests** (`Tests/MusicWidgetTests`, plain XCTest via SwiftPM) cover
+- **Unit tests** (`Tests/MiniplayerTests`, plain XCTest via SwiftPM) cover
   the parts that don't need a live Spotify/Music session: `PlayerViewModel`'s
   active-source selection, skin/window persistence, AppleScript-result
   parsing, PKCE crypto, the OAuth loopback server's request parsing, and
   Spotify token storage. Run them with:
 
   ```bash
-  swift test --filter MusicWidgetTests
+  swift test --filter MiniplayerTests
   ```
 
-- **E2E UI tests** (`MusicWidgetUITests.xcodeproj`, a real XCUITest UI
+- **E2E UI tests** (`MiniplayerUITests.xcodeproj`, a real XCUITest UI
   Testing Bundle — `XCUIApplication` can't run inside a plain `swift test`
   bundle at all) drive the actual built app: skin switching, playback
   controls, and the now-playing labels. They run against a **debug** build
-  launched with `MUSICWIDGET_UI_TEST=1`, which swaps in a deterministic fake
+  launched with `MINIPLAYER_UI_TEST=1`, which swaps in a deterministic fake
   media-app controller (`FakeMediaAppController`, `#if DEBUG`-only — never
   compiled into the release build people actually download) so there's a
   track to assert on without Spotify or Music installed. Run them with:
 
   ```bash
-  ./Packaging/build-app.sh --debug   # produces dist/MusicWidget-Debug.app
-  xcodebuild test -project MusicWidgetUITests.xcodeproj -scheme MusicWidgetUITests -destination 'platform=macOS'
+  ./Packaging/build-app.sh --debug   # produces dist/Miniplayer-Debug.app
+  xcodebuild test -project MiniplayerUITests.xcodeproj -scheme MiniplayerUITests -destination 'platform=macOS'
   ```
 
   The first time you run these on a given Mac, macOS will need to grant
@@ -295,7 +295,7 @@ music is actively playing.
 ## Project structure
 
 ```
-Sources/MusicWidget/
+Sources/Miniplayer/
 ├── main.swift                 # App entry point, NSWindow/NSApplication setup, --print-queue CLI
 ├── PlayerViewModel.swift      # Polling loop, active-source selection, playback actions
 ├── MediaAppController.swift   # Shared protocol + Track/QueueTrack/PlayerState/QueueFetchResult models
@@ -323,11 +323,11 @@ Sources/MusicWidget/
     └── ipod-body.png          # Device artwork used by the iPod skin
 
 Tests/
-├── MusicWidgetTests/          # Unit tests (SwiftPM test target, `swift test`)
-└── MusicWidgetUITests/        # E2E source, built/run via MusicWidgetUITests.xcodeproj
+├── MiniplayerTests/          # Unit tests (SwiftPM test target, `swift test`)
+└── MiniplayerUITests/        # E2E source, built/run via MiniplayerUITests.xcodeproj
 
 Packaging/
-├── build-app.sh                # Assembles dist/MusicWidget(-Debug).app (see --debug)
+├── build-app.sh                # Assembles dist/Miniplayer(-Debug).app (see --debug)
 ├── Info.plist                  # App bundle metadata (bundle ID, version, permission strings)
 └── AppIcon.icns                # App icon (placeholder — see Known limitations)
 ```
@@ -346,10 +346,14 @@ Packaging/
 - No Apple Music API integration — Apple Music support is local AppleScript
   only, so it only reflects the Music.app instance actually running on your
   Mac.
-- **The prebuilt app is ad-hoc signed only, not notarized** — Apple notarization
-  requires a paid Developer ID account. Until that's set up, a freshly
-  downloaded/built copy needs one right-click-Open to get past Gatekeeper
-  (see step 5 above).
+- **The prebuilt app is ad-hoc signed only, not notarized**, and that's
+  expected to stay true — Apple notarization requires a paid Developer ID
+  account, which isn't planned. A freshly downloaded/built copy will always
+  need one right-click-Open to get past Gatekeeper (see step 5 above).
 - **`Packaging/AppIcon.icns` is a placeholder** generated directly from the
   iPod skin's artwork — worth swapping for original artwork before any wider
   release, for the same reasons as the skin itself.
+
+## License
+
+[MIT](LICENSE)

@@ -1,6 +1,6 @@
 import CryptoKit
 import XCTest
-@testable import MusicWidget
+@testable import Miniplayer
 
 final class SpotifyAuthManagerTests: XCTestCase {
     // MARK: - randomURLSafeString
