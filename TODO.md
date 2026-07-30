@@ -9,6 +9,8 @@ install and use this." Grouped by front, roughly in priority order.
 - [ ] iPod stickers
 - [ ] iPod stickers app to add and modify iPod
 - [ ] View for older mac versions not compatibile with liquid glass
+- [ ] "Open Spotify" button
+- [ ] explore volume adjustments in the UI
 
 ## 1. Spotify API access — blocking
 
